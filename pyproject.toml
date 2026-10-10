@@ -1,0 +1,28 @@
+[project]
+name = "jiffy-flaky"
+version = "0.1.0"
+description = "A messaging provider that misbehaves on purpose, and keeps a log you can audit afterwards."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+authors = [{ name = "Zeeshan Adil", email = "zeeabutt@outlook.com" }]
+keywords = ["testing", "fault-injection", "webhooks", "idempotency", "chaos"]
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "Typing :: Typed",
+    "Topic :: Software Development :: Testing",
+]
+dependencies = []
+
+[project.scripts]
+jiffy-flaky = "jiffy_flaky.cli:main"
+
+[project.urls]
+Source = "https://github.com/ZeeshanAdilButt/distributed-systems-challenges/tree/main/packages/jiffy-flaky"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/jiffy_flaky"]
