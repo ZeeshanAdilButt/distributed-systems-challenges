@@ -13,6 +13,10 @@ it runs a little lighter. Ten times one store's share comes in two shapes, a
 steady stream and the bulk sends a real noisy store makes, and FIFO runs the bulk shape
 once more so the table shows what fair claiming is protecting against.
 
+The comparison runs in rounds: baseline, steady and bulk, again and again, each scenario
+measured against the baseline of its own round, and the gate takes the median of those
+ratios. A slow stretch on the machine then spoils one round, not the verdict.
+
 Every connection runs with synchronous_commit off. This measures how claims are shared,
 not how fast the disk flushes, and on a laptop or a VM an occasional slow fsync stalls
 every commit at once and swamps the difference being measured. The chaos run, where
@@ -59,7 +63,8 @@ class BenchConfig:
     max_inflight: int = 2
     utilization: float = 0.5
     noisy_factor: float = 10.0
-    duration: float = 40.0
+    duration: float = 20.0
+    rounds: int = 3
     warmup: float = 5.0
     bulk_every: float = 5.0
     send_latency: float = 0.04
@@ -68,18 +73,31 @@ class BenchConfig:
     workdir: Path | None = None
 
 
+@dataclass(frozen=True)
+class Run:
+    quiet_p50: float
+    quiet_p95: float
+    noisy_p95: float
+    samples: int
+
+
 @dataclass
 class Scenario:
     name: str
     policy: ClaimPolicy
     shape: Shape
     gated: bool
-    quiet_p50: float = 0.0
-    quiet_p95: float = 0.0
-    noisy_p95: float = 0.0
-    samples: int = 0
-    ratio: float = 0.0
+    runs: list[Run] = field(default_factory=list)
+    ratios: list[float] = field(default_factory=list)
+    """Quiet p95 over the quiet p95 of the same round's baseline, one per round."""
     passed: bool = True
+
+    def median(self, metric: str) -> float:
+        return statistics.median(getattr(r, metric) for r in self.runs) if self.runs else 0.0
+
+    @property
+    def ratio(self) -> float:
+        return statistics.median(self.ratios) if self.ratios else 0.0
 
 
 @dataclass
@@ -92,16 +110,17 @@ class BenchResult:
 
     def markdown(self) -> str:
         lines = [
-            "| scenario | claim | quiet p50 | quiet p95 | p95 vs baseline"
+            "| scenario | claim | quiet p50 | quiet p95 | p95 vs baseline | by round"
             " | noisy store p95 | gate |",
-            "|---|---|---|---|---|---|---|",
+            "|---|---|---|---|---|---|---|---|",
         ]
         for s in self.scenarios:
             gate = ("pass" if s.passed else "FAIL") if s.gated else "for contrast"
+            by_round = ", ".join(f"{r:.2f}" for r in s.ratios)
             lines.append(
-                f"| {s.name} | {s.policy} | {s.quiet_p50 * 1000:.0f} ms"
-                f" | {s.quiet_p95 * 1000:.0f} ms | {s.ratio:.3f}x"
-                f" | {s.noisy_p95 * 1000:.0f} ms | {gate} |"
+                f"| {s.name} | {s.policy} | {s.median('quiet_p50') * 1000:.0f} ms"
+                f" | {s.median('quiet_p95') * 1000:.0f} ms | {s.ratio:.3f}x | {by_round}"
+                f" | {s.median('noisy_p95') * 1000:.0f} ms | {gate} |"
             )
         lines.append("")
         lines.append(
@@ -109,8 +128,9 @@ class BenchResult:
             f" {self.config['workers']} workers. Each store sends {self.rate_per_store:.2f}/s"
             f" and the noisy one {self.config['noisy_factor']:.0f}x that, which uses"
             f" {self.config['utilization']:.0%} of capacity (the baseline, without the noisy"
-            f" store's extra, a little less). Gate: quiet p95 within"
-            f" {self.config['tolerance']:.0%} of the baseline."
+            f" store's extra, a little less). Latencies are medians over"
+            f" {self.config['rounds']} rounds. Gate: the median ratio of quiet p95 to the"
+            f" same round's baseline is within {self.config['tolerance']:.0%}."
         )
         return "\n".join(lines)
 
@@ -187,7 +207,7 @@ def run_scenario(
     scenario: Scenario,
     rate: float,
     logs: Path,
-) -> Scenario:
+) -> Run:
     harness.prepare(url, stores=config.stores, max_inflight=config.max_inflight)
     env = harness.courier_env(url, provider_url, claim_policy=scenario.policy, poll_after=30)
     supervisor = harness.supervise(
@@ -209,11 +229,12 @@ def run_scenario(
         supervisor.stop()
     by_store = latencies(url, config.warmup)
     quiet = [s for store, values in by_store.items() if store != 1 for s in values]
-    scenario.samples = len(quiet)
-    scenario.quiet_p50 = p(quiet, 50)
-    scenario.quiet_p95 = p(quiet, 95)
-    scenario.noisy_p95 = p(by_store.get(1, []), 95)
-    return scenario
+    return Run(
+        quiet_p50=p(quiet, 50),
+        quiet_p95=p(quiet, 95),
+        noisy_p95=p(by_store.get(1, []), 95),
+        samples=len(quiet),
+    )
 
 
 def calibrate(
@@ -281,30 +302,43 @@ def run(config: BenchConfig) -> BenchResult:
                 capacity_per_second=capacity,
                 rate_per_store=rate,
             )
-            plan = [
-                Scenario("baseline: every store equal", "fair", "even", gated=False),
-                Scenario("one store 10x, steady", "fair", "steady", gated=True),
-                Scenario("one store 10x, bulk sends", "fair", "bulk", gated=True),
-                Scenario("one store 10x, bulk sends", "fifo", "bulk", gated=False),
-            ]
-            for scenario in plan:
-                log.warning("bench: %s (%s)", scenario.name, scenario.policy)
-                run_scenario(config, url, provider.url, webhook_port, scenario, rate, workdir)
+            baseline = Scenario("baseline: every store equal", "fair", "even", gated=False)
+            steady = Scenario("one store 10x, steady", "fair", "steady", gated=True)
+            bulk = Scenario("one store 10x, bulk sends", "fair", "bulk", gated=True)
+            fifo = Scenario("one store 10x, bulk sends", "fifo", "bulk", gated=False)
+            for round_ in range(config.rounds):
+                # FIFO is only there for contrast, so once is enough.
+                plan = [baseline, steady, bulk, *([fifo] if round_ == 0 else [])]
+                for scenario in plan:
+                    log.warning(
+                        "bench round %d of %d: %s (%s)",
+                        round_ + 1,
+                        config.rounds,
+                        scenario.name,
+                        scenario.policy,
+                    )
+                    scenario.runs.append(
+                        run_scenario(
+                            config, url, provider.url, webhook_port, scenario, rate, workdir
+                        )
+                    )
+                base = baseline.runs[-1].quiet_p95
+                for scenario in plan:
+                    scenario.ratios.append(scenario.runs[-1].quiet_p95 / base if base else 0.0)
         finally:
             provider.stop()
-    baseline = plan[0].quiet_p95
-    for scenario in plan:
-        scenario.ratio = scenario.quiet_p95 / baseline if baseline else 0.0
+    result.scenarios = [baseline, steady, bulk, fifo]
+    for scenario in result.scenarios:
         if scenario.gated:
             scenario.passed = scenario.ratio <= 1 + config.tolerance
-    result.scenarios = plan
-    result.passed = all(s.passed for s in plan if s.gated)
+    result.passed = all(s.passed for s in result.scenarios if s.gated)
     return result
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m courier.bench")
     parser.add_argument("--duration", type=float, default=BenchConfig.duration)
+    parser.add_argument("--rounds", type=int, default=BenchConfig.rounds)
     parser.add_argument("--workers", type=int, default=BenchConfig.workers)
     parser.add_argument("--utilization", type=float, default=BenchConfig.utilization)
     parser.add_argument("--workdir", type=Path)
@@ -314,6 +348,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     result = run(
         BenchConfig(
             duration=args.duration,
+            rounds=args.rounds,
             workers=args.workers,
             utilization=args.utilization,
             workdir=args.workdir,

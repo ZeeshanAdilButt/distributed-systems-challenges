@@ -177,12 +177,18 @@ def test_the_log_file_holds_the_same_records(start_provider: Start, tmp_path: Pa
     provider.stop()
     records = read_log(path)
     assert records == provider.records()
-    assert [r["kind"] for r in records] == [
+    # Request records come from the HTTP threads and status records from the scheduler,
+    # so how the two interleave depends on timing. What is fixed: the effect comes first,
+    # and the statuses arrive in order.
+    assert records[0]["kind"] == "effect"
+    assert sorted(r["kind"] for r in records) == [
         "effect",
+        "request",
+        "request",
         "status",
-        "request",
-        "request",
         "status",
         "status",
     ]
+    statuses = [r["status"] for r in records if r["kind"] == "status"]
+    assert statuses == ["queued", "sent", "delivered"]
     assert all(isinstance(r["at"], float) for r in records)

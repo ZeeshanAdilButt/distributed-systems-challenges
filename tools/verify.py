@@ -235,7 +235,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             ]
             if not args.quick:
                 plan.append(("mutation score on claim, finish and outbox", lambda: mutation(env)))
-            bench_args = ["--duration", "20"] if args.quick else []
+            bench_args = ["--duration", "15"] if args.quick else []
             chaos_args = ["--actions", "600", "--kills", "60"] if args.quick else []
             chaos_env = {k: v for k, v in env.items() if k != "DATABASE_URL"}
             plan += [
