@@ -1,6 +1,6 @@
 [project]
 name = "jiffy-chaos"
-version = "0.1.0"
+version = "0.1.1"
 description = "Real-process chaos for tests: supervise workers, kill -9 them, freeze them, crash Postgres."
 readme = "README.md"
 license = "MIT"
@@ -56,4 +56,6 @@ exclude = ["mutants/"]
 
 [tool.pytest.ini_options]
 addopts = "--import-mode=importlib"
+# mutmut leaves a copy of the tests in mutants/; collecting it would count them twice.
+norecursedirs = [".*", "*.egg", "build", "dist", "venv", "mutants"]
 markers = ["slow: runs real processes for several seconds"]

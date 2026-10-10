@@ -25,8 +25,8 @@ and the process carries on later as if no time had passed.
 ## Install
 
 ```bash
-pip install "jiffy-chaos @ git+https://github.com/ZeeshanAdilButt/jiffy-chaos@v0.1.0"
-pip install "jiffy-chaos[pytest] @ git+https://github.com/ZeeshanAdilButt/jiffy-chaos@v0.1.0"  # with the pg_url fixture
+pip install "jiffy-chaos @ git+https://github.com/ZeeshanAdilButt/jiffy-chaos@v0.1.1"
+pip install "jiffy-chaos[pytest] @ git+https://github.com/ZeeshanAdilButt/jiffy-chaos@v0.1.1"  # with the pg_url fixture
 ```
 
 ## Supervisor

@@ -131,6 +131,10 @@ class LocalCluster:
     def start(self) -> None:
         if self.is_running():
             return
+        # Nothing live owns postmaster.pid, so it is stale. Postgres clears a stale one by
+        # itself when its pid is gone, but not when the pid is a zombie nobody has reaped,
+        # which is what a SIGKILLed postmaster becomes in a container without an init.
+        (self.datadir / "postmaster.pid").unlink(missing_ok=True)
         options = f"-p {self.port} -h 127.0.0.1"
         if sys.platform != "win32":
             # pg_ctl hands -o to /bin/sh, so the socket path must be shell quoted.

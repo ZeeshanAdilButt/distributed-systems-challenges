@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import subprocess
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
+import psutil
 import psycopg
 import pytest
 
@@ -60,6 +63,31 @@ def test_context_manager_and_fast_restart(tmp_path: Path, pg_bin: Path) -> None:
         same = LocalCluster(cluster.datadir, bindir=pg_bin)
         assert same.port == cluster.port
     assert not cluster.datadir.exists()
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(sys.platform == "win32", reason="zombie processes are a POSIX thing")
+def test_start_clears_a_lock_file_left_by_an_unreaped_postmaster(
+    tmp_path: Path, pg_bin: Path
+) -> None:
+    """In a container whose init does not reap orphans, a SIGKILLed postmaster stays a
+    zombie, and Postgres will not start while that pid still answers kill(pid, 0)."""
+    with LocalCluster(tmp_path / "pgdata", bindir=pg_bin) as cluster:
+        cluster.stop("immediate")
+        zombie = subprocess.Popen(["true"])  # exits at once and is not waited for
+        try:
+            deadline = time.monotonic() + 5
+            while psutil.Process(zombie.pid).status() != psutil.STATUS_ZOMBIE:
+                assert time.monotonic() < deadline
+                time.sleep(0.01)
+            lock = [str(zombie.pid), str(cluster.datadir), "0", str(cluster.port), "", "", ""]
+            (cluster.datadir / "postmaster.pid").write_text("\n".join(lock) + "\n")
+
+            cluster.start()
+
+            assert cluster.is_ready()
+        finally:
+            zombie.wait()
 
 
 def test_stop_and_destroy_are_no_ops_without_a_server(tmp_path: Path, pg_bin: Path) -> None:
