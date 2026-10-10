@@ -1,5 +1,7 @@
 # Distributed systems challenges
 
+[![verify](https://github.com/ZeeshanAdilButt/distributed-systems-challenges/actions/workflows/verify.yml/badge.svg)](https://github.com/ZeeshanAdilButt/distributed-systems-challenges/actions/workflows/verify.yml)
+
 Small, runnable answers to the problems that show up once work is spread across
 processes that crash, stall and retry. Each challenge takes one real problem, solves it
 in Python and PostgreSQL, and then tries hard to break the solution: real worker
@@ -56,6 +58,8 @@ Or, with only Docker installed:
 docker build -f shared/docker/Dockerfile -t dsc-verify .
 docker run --rm --shm-size=256m dsc-verify
 ```
+
+CI does exactly that, with `--quick`, on every push.
 
 Linux and macOS only. The chaos tooling relies on POSIX signals; on Windows, use WSL or
 Docker.

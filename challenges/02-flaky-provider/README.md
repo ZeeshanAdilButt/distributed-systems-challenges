@@ -136,6 +136,9 @@ The benchmark measures enqueue-to-dispatch latency for the 99 quiet stores:
 - **bulk 10x**: the same volume, but in bursts every few seconds, the way a real
   campaign or a backfill arrives.
 - **FIFO, bulk 10x**: the bulk case again without fair claiming, for contrast.
+- Baseline, steady and bulk run three times, interleaved. Each scenario is compared with
+  the baseline of its own round, and the gate takes the median of the three ratios, so
+  one slow stretch on the machine spoils a round, not the verdict.
 
 The bursts are what hurt. Under FIFO a burst sits in front of everyone; with the cap, the
 noisy store drains its own backlog two at a time while everyone else keeps their turn.
@@ -151,12 +154,13 @@ Two things I learned getting this benchmark to measure the right thing:
   `synchronous_commit` off. With it on, every commit waits for a WAL flush, and on a
   laptop or a VM an occasional slow flush stalls every commit at once. Under WSL2 the
   slow flushes came every 30 seconds or so, at the same moments the host stepped the
-  guest's clock forward by three seconds, and they swamped the difference being measured. The chaos run keeps `synchronous_commit` on, because
-  there durability is the point.
+  guest's clock forward by three seconds, and they swamped the difference being
+  measured. The chaos run keeps `synchronous_commit` on, because there durability is
+  the point.
 
 ## Results
 
-One `./verify` run on a 20-thread laptop, under WSL2, took a little under ten minutes.
+One `./verify` run on a 20-thread laptop, under WSL2, took about nine minutes.
 Your numbers will differ; the gates should not.
 
 | Gate | Result |
@@ -181,23 +185,24 @@ log, not from our database.
 | sends made after an earlier send without a lookup in between | 0 |
 | actions whose outcome differs from the provider's final status | 0 |
 
-The provider injected 57 lost requests and 60 lost responses, 2 lookup timeouts, 120
-duplicate webhooks, 203 reordered messages and 13 late failures. 1939 actions went out on
-the first attempt, 59 needed a second and 2 a third; every one of those retries was
-preceded by a lookup and reused the original key. 1987 ended delivered and 13 failed,
-exactly as the provider reports them.
+The provider injected 52 lost requests and 52 lost responses, 4 lookup timeouts, 108
+duplicate webhooks, 184 reordered messages and 17 late failures. 1940 actions went out on
+the first attempt and 60 needed a second; every one of those retries was preceded by a
+lookup and reused the original key. 1983 ended delivered and 17 failed, exactly as the
+provider reports them.
 
-**Fairness.** Capacity measured at 170 actions per second with 8 workers.
+**Fairness.** Capacity measured at 175 actions per second with 8 workers. Latencies are
+medians over three rounds.
 
-| Scenario | Claim | Quiet p50 | Quiet p95 | vs baseline | Noisy store p95 |
-|---|---|---|---|---|---|
-| baseline, every store equal | fair | 53 ms | 76 ms | 1.00x | 74 ms |
-| one store 10x, steady | fair | 51 ms | 72 ms | 0.94x | 100 ms |
-| one store 10x, bulk sends | fair | 50 ms | 69 ms | 0.91x | 1051 ms |
-| one store 10x, bulk sends | fifo | 52 ms | 156 ms | 2.05x | 260 ms |
+| Scenario | Claim | Quiet p50 | Quiet p95 | vs baseline (median) | By round | Noisy store p95 |
+|---|---|---|---|---|---|---|
+| baseline, every store equal | fair | 50 ms | 68 ms | 1.00x | 1.00, 1.00, 1.00 | 63 ms |
+| one store 10x, steady | fair | 50 ms | 70 ms | 0.98x | 0.98, 1.04, 0.97 | 104 ms |
+| one store 10x, bulk sends | fair | 50 ms | 70 ms | 0.99x | 0.99, 1.09, 0.97 | 1058 ms |
+| one store 10x, bulk sends | fifo | 51 ms | 159 ms | 2.33x | 2.33 | 265 ms |
 
 With fair claiming, the 99 quiet stores do not notice the noisy one; under FIFO their
-p95 doubles. The noisy store's own latency under bulk sends is the price of its bursts:
+p95 more than doubles. The noisy store's own latency under bulk sends is the price of its bursts:
 it drains them two at a time while everyone else keeps their turn. Small ratios below
 1.00x are run-to-run noise.
 
