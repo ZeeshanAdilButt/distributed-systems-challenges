@@ -22,3 +22,24 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["courier"]
+
+# Mutation testing covers the claim, finish and outbox code. The process plumbing
+# (worker loop, CLI, harness) is exercised by the real-process tests instead.
+[tool.mutmut]
+source_paths = ["courier/"]
+do_not_mutate = [
+    "courier/__main__.py",
+    "courier/bench.py",
+    "courier/chaos.py",
+    "courier/cli.py",
+    "courier/config.py",
+    "courier/db.py",
+    "courier/harness.py",
+    "courier/intake.py",
+    "courier/provider.py",
+    "courier/testing.py",
+    "courier/webhooks.py",
+    "courier/worker.py",
+]
+pytest_add_cli_args = ["--import-mode=importlib", "-p", "no:cacheprovider", "-m", "not slow"]
+pytest_add_cli_args_test_selection = ["tests/"]

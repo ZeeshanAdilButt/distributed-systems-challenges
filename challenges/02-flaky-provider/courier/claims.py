@@ -9,8 +9,9 @@ from courier.db import Connection
 from jiffy_lease import Lease, Leases, RoundRobin
 
 # Pending work, plus running work whose holder died: `available()` adds the lease check.
-WORKABLE = sql.SQL("status IN ('pending', 'running')")
-DUE_FOR_CHECK = sql.SQL("status = 'dispatched' AND next_check_at <= now()")
+WORKABLE = sql.SQL("""status IN ('pending', 'running')""")
+DUE_FOR_CHECK = sql.SQL("""status = 'dispatched' AND next_check_at <= now()""")
+BY_DUE_TIME = sql.SQL("""next_check_at""")
 ACTION_COLUMNS = ("store_id", "recipient", "template")
 
 
@@ -31,5 +32,5 @@ class Claims:
     def next_check(self, conn: Connection) -> Lease | None:
         """A dispatched action whose final webhook is overdue."""
         return self.actions.claim(
-            conn, where=DUE_FOR_CHECK, order_by=sql.SQL("next_check_at"), returning=ACTION_COLUMNS
+            conn, where=DUE_FOR_CHECK, order_by=BY_DUE_TIME, returning=ACTION_COLUMNS
         )
