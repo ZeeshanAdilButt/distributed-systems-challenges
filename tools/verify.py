@@ -4,8 +4,8 @@
     ./verify --quick    skip mutation testing, shorter chaos and benchmark
 
 Needs Postgres server binaries (initdb, pg_ctl) on PATH or in PG_BIN, because the chaos
-run crashes its own Postgres. Set JIFFY_PG_MODE=docker to use the compose service in
-shared/infra instead. Reports land in reports/.
+run crashes its own Postgres. Set JIFFY_PG_MODE=docker to use the compose service that
+ships with jiffy-chaos instead. Reports land in reports/.
 """
 
 from __future__ import annotations
@@ -14,6 +14,7 @@ import argparse
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -147,7 +148,7 @@ def mutation(env: dict[str, str]) -> tuple[bool, str, str]:
     passed = True
     scores = []
     for label, directory in MUTATION_TARGETS.items():
-        run(["rm", "-rf", "mutants"], cwd=directory)
+        shutil.rmtree(directory / "mutants", ignore_errors=True)
         code, _ = run(
             [PYTHON, "-m", "mutmut", "run", "--max-children", str(os.cpu_count() or 4)],
             cwd=directory,
@@ -196,9 +197,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     REPORTS.mkdir(exist_ok=True)
     report = Report()
 
-    from jiffy_chaos.postgres import LocalCluster
+    from jiffy_chaos.postgres import LocalCluster, find_pg_bin
 
     env = dict(os.environ)
+    if find_pg_bin() is None and env.get("JIFFY_PG_MODE", "local") == "local":
+        print(
+            "verify needs the Postgres server binaries (initdb, pg_ctl), because the chaos"
+            " run starts and crashes its own cluster.\nInstall them (apt install postgresql,"
+            " brew install postgresql@16) or point PG_BIN at their directory, or run"
+            " everything in Docker: see shared/docker/Dockerfile.",
+            file=sys.stderr,
+        )
+        return 2
     with tempfile.TemporaryDirectory(prefix="verify-pg-") as scratch:
         cluster: LocalCluster | None = None
         if "DATABASE_URL" not in env:

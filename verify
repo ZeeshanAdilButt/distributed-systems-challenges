@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Every gate in one run: lint, strict types, tests, mutation score, the fairness
+# benchmark and the chaos run. tools/verify.py does the work and writes reports/.
+#
+#   ./verify            everything
+#   ./verify --quick    no mutation testing, shorter benchmark and chaos run
+set -euo pipefail
+cd "$(dirname "$0")"
+
+if command -v uv >/dev/null 2>&1; then
+  uv sync --all-packages --frozen --quiet
+  exec uv run --frozen --no-sync python tools/verify.py "$@"
+fi
+
+# No uv: a plain virtualenv. `--group` needs pip 25.1 or newer, hence the upgrade.
+python3 -m venv .venv
+.venv/bin/python -m pip install --quiet --upgrade pip
+.venv/bin/python -m pip install --quiet --group dev \
+  -e packages/jiffy-lease -e packages/jiffy-flaky -e "packages/jiffy-chaos[pytest]" \
+  -e challenges/01-zombie-worker -e challenges/02-flaky-provider
+exec .venv/bin/python tools/verify.py "$@"
