@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready --health-interval 2s --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: >-
+          pip install -e .
+          pytest==9.1.1 hypothesis==6.168.5 mypy==2.4.0 ruff==0.17.0
+          "jiffy-chaos[pytest] @ git+https://github.com/ZeeshanAdilButt/jiffy-chaos@v0.1.0"
+      - run: ruff check . && ruff format --check .
+      - run: mypy src tests
+      - run: pytest -q

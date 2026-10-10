@@ -1,4 +1,18 @@
-# jiffy-chaos
+<h1 align="center">jiffy-chaos</h1>
+
+<p align="center">
+  Real-process chaos for tests: supervise workers, kill -9 them, freeze
+  them, crash Postgres.
+</p>
+
+<p align="center">
+  <a href="https://github.com/ZeeshanAdilButt/jiffy-chaos/actions/workflows/ci.yml">
+    <img alt="CI" src="https://github.com/ZeeshanAdilButt/jiffy-chaos/actions/workflows/ci.yml/badge.svg">
+  </a>
+  <img alt="Python" src="https://img.shields.io/badge/python-%3E%3D3.12-3776AB?logo=python&logoColor=white">
+  <img alt="mypy" src="https://img.shields.io/badge/mypy-strict-2A6DB2">
+  <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
+</p>
 
 Real failures for tests, not mocks. It runs a fleet of real worker processes and restarts
 the ones that die, kills them with SIGKILL at random, freezes and thaws them, and stops or
@@ -7,6 +21,13 @@ docker compose service, or a pod on Kubernetes.
 
 A frozen process is how it simulates a long GC pause: every thread stops, nothing runs,
 and the process carries on later as if no time had passed.
+
+## Install
+
+```bash
+pip install "jiffy-chaos @ git+https://github.com/ZeeshanAdilButt/jiffy-chaos@v0.1.0"
+pip install "jiffy-chaos[pytest] @ git+https://github.com/ZeeshanAdilButt/jiffy-chaos@v0.1.0"  # with the pg_url fixture
+```
 
 ## Supervisor
 
@@ -94,3 +115,14 @@ jiffy-chaos pg restart --immediate   # crash and recover
 jiffy-chaos pg down
 jiffy-chaos pg up --mode docker      # or set JIFFY_PG_MODE
 ```
+
+## Where it lives
+
+jiffy-chaos is developed in
+[distributed-systems-challenges](https://github.com/ZeeshanAdilButt/distributed-systems-challenges),
+next to the challenges that use it, and split out here with its history. Issues are
+welcome here; changes land there first and are mirrored.
+
+## License
+
+MIT

@@ -1,4 +1,18 @@
-# jiffy-flaky
+<h1 align="center">jiffy-flaky</h1>
+
+<p align="center">
+  A messaging provider that misbehaves on purpose, and keeps a log you
+  can audit afterwards.
+</p>
+
+<p align="center">
+  <a href="https://github.com/ZeeshanAdilButt/jiffy-flaky/actions/workflows/ci.yml">
+    <img alt="CI" src="https://github.com/ZeeshanAdilButt/jiffy-flaky/actions/workflows/ci.yml/badge.svg">
+  </a>
+  <img alt="Python" src="https://img.shields.io/badge/python-%3E%3D3.12-3776AB?logo=python&logoColor=white">
+  <img alt="mypy" src="https://img.shields.io/badge/mypy-strict-2A6DB2">
+  <img alt="License" src="https://img.shields.io/badge/license-MIT-blue">
+</p>
 
 A fake messaging provider (a cut-down Twilio or SendGrid) that misbehaves on purpose, and
 keeps a log of what it really did.
@@ -9,6 +23,12 @@ each action produced exactly one message, whatever the system under test believe
 
 The provider honours one dedupe mechanism, the `Idempotency-Key` header. It ignores any
 epoch or fencing token. It uses only the Python standard library.
+
+## Install
+
+```bash
+pip install "jiffy-flaky @ git+https://github.com/ZeeshanAdilButt/jiffy-flaky@v0.1.0"
+```
 
 ## Quick start
 
@@ -160,3 +180,14 @@ report and exits 0 when it is ok, 1 when it is not, and 2 when the log cannot be
   log file for each provider process.
 - HTTP/1.0 only: every request uses its own connection.
 - Webhooks are sent by 8 threads. A receiver that hangs slows delivery down.
+
+## Where it lives
+
+jiffy-flaky is developed in
+[distributed-systems-challenges](https://github.com/ZeeshanAdilButt/distributed-systems-challenges),
+next to the challenges that use it, and split out here with its history. Issues are
+welcome here; changes land there first and are mirrored.
+
+## License
+
+MIT
