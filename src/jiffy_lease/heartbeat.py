@@ -39,7 +39,7 @@ class Heartbeat:
         self._lost = False
         self._stop = threading.Event()
         self._lock = threading.Lock()
-        self._thread = threading.Thread(target=self._run, name=f"heartbeat-{lease.id}", daemon=True)
+        self._thread = threading.Thread(target=self._run, daemon=True)
 
     @property
     def lease(self) -> Lease:
@@ -80,12 +80,10 @@ class Heartbeat:
                 except LeaseLost:
                     with self._lock:
                         self._lost = True
-                    log.info("lease on %s %s was taken over", self._lease.table, self._lease.id)
+                    log.info("lease on %s was taken over", self._lease.id)
                     return
                 except psycopg.Error as exc:
-                    log.warning(
-                        "heartbeat for %s %s failed: %s", self._lease.table, self._lease.id, exc
-                    )
+                    log.warning("heartbeat for %s failed: %s", self._lease.id, exc)
                     if conn is not None:
                         conn.close()
                     conn = None
