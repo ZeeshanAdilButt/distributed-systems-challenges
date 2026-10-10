@@ -2,7 +2,9 @@
 name = "distributed-systems-challenges"
 version = "0.1.0"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "fencing-demo",
+]
 
 [dependency-groups]
 dev = [
@@ -19,6 +21,9 @@ package = false
 
 [tool.uv.workspace]
 members = ["packages/*", "challenges/*"]
+
+[tool.uv.sources]
+fencing-demo = { workspace = true }
 
 [tool.ruff]
 line-length = 100
