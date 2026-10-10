@@ -1,0 +1,311 @@
+"""The noisy-neighbour benchmark.
+
+One store sends ten times what the other 99 do. We measure how long the quiet stores'
+messages take to reach the provider (enqueue to accepted, on the database clock) and
+compare their p95 with a baseline where every store sends the same amount.
+
+The load is sized against measured capacity, so the run means the same thing on a
+laptop and on a big box: first we time a backlog to find what the workers can do, then
+we offer `utilization` of that. Ten times one store's share comes in two shapes, a
+steady stream and the bulk sends a real noisy store makes, and FIFO runs the bulk shape
+once more so the table shows what fair claiming is protecting against.
+
+    python -m courier.bench
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+import random
+import statistics
+import time
+from collections import defaultdict
+from collections.abc import Sequence
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
+from typing import Any, Literal
+
+from courier import db, harness, intake
+from courier.config import ClaimPolicy
+
+log = logging.getLogger(__name__)
+
+Shape = Literal["even", "steady", "bulk"]
+QUIET_PROVIDER: dict[str, object] = {
+    "send_timeout_rate": 0,
+    "lookup_timeout_rate": 0,
+    "duplicate_webhook_rate": 0,
+    "reorder_webhook_rate": 0,
+    "late_failure_rate": 0,
+}
+
+
+@dataclass(frozen=True)
+class BenchConfig:
+    stores: int = 100
+    workers: int = 8
+    max_inflight: int = 2
+    utilization: float = 0.6
+    noisy_factor: float = 10.0
+    duration: float = 40.0
+    warmup: float = 5.0
+    bulk_every: float = 5.0
+    send_latency: float = 0.04
+    tolerance: float = 0.10
+    seed: int = 11
+    workdir: Path | None = None
+
+
+@dataclass
+class Scenario:
+    name: str
+    policy: ClaimPolicy
+    shape: Shape
+    gated: bool
+    quiet_p50: float = 0.0
+    quiet_p95: float = 0.0
+    noisy_p95: float = 0.0
+    samples: int = 0
+    ratio: float = 0.0
+    passed: bool = True
+
+
+@dataclass
+class BenchResult:
+    config: dict[str, Any]
+    capacity_per_second: float
+    rate_per_store: float
+    scenarios: list[Scenario] = field(default_factory=list)
+    passed: bool = False
+
+    def markdown(self) -> str:
+        lines = [
+            "| scenario | claim | quiet p50 | quiet p95 | p95 vs baseline"
+            " | noisy store p95 | gate |",
+            "|---|---|---|---|---|---|---|",
+        ]
+        for s in self.scenarios:
+            gate = ("pass" if s.passed else "FAIL") if s.gated else "for contrast"
+            lines.append(
+                f"| {s.name} | {s.policy} | {s.quiet_p50 * 1000:.0f} ms"
+                f" | {s.quiet_p95 * 1000:.0f} ms | {s.ratio:.3f}x"
+                f" | {s.noisy_p95 * 1000:.0f} ms | {gate} |"
+            )
+        lines.append("")
+        lines.append(
+            f"Measured capacity {self.capacity_per_second:.0f} actions/s with"
+            f" {self.config['workers']} workers; offered {self.config['utilization']:.0%} of it"
+            f" ({self.rate_per_store:.2f}/s per store, the noisy store at"
+            f" {self.config['noisy_factor']:.0f}x). Gate: quiet p95 within"
+            f" {self.config['tolerance']:.0%} of the baseline."
+        )
+        return "\n".join(lines)
+
+
+def arrivals(config: BenchConfig, rate: float, shape: Shape) -> list[tuple[float, int]]:
+    """(seconds from start, store) for every action in one run, sorted by time.
+
+    Each store draws from its own seeded stream, so the 99 quiet stores get exactly the
+    same arrivals in every scenario and the only thing that changes is the noisy one."""
+    out: list[tuple[float, int]] = []
+    for store in range(1, config.stores + 1):
+        rng = random.Random(config.seed * 1_000_003 + store)
+        noisy = store == 1 and shape != "even"
+        store_rate = rate * (config.noisy_factor if noisy else 1.0)
+        if noisy and shape == "bulk":
+            t = rng.uniform(0, config.bulk_every)
+            while t < config.duration:
+                out += [(t, store)] * round(store_rate * config.bulk_every)
+                t += config.bulk_every
+            continue
+        t = rng.expovariate(store_rate)
+        while t < config.duration:
+            out.append((t, store))
+            t += rng.expovariate(store_rate)
+    out.sort()
+    return out
+
+
+def offer(url: str, schedule: list[tuple[float, int]]) -> None:
+    """Insert each action when its time comes (open loop: we never wait for the workers)."""
+    start = time.monotonic()
+    i = 0
+    with db.connect(url) as conn:
+        while i < len(schedule):
+            now = time.monotonic() - start
+            due = schedule[i][0]
+            if due > now:
+                time.sleep(min(due - now, 0.01))
+                continue
+            batch: list[tuple[int, str, str]] = []
+            while i < len(schedule) and schedule[i][0] <= now:
+                store = schedule[i][1]
+                batch.append((store, f"+1555{i:07d}", "Your order has shipped."))
+                i += 1
+            intake.enqueue_many(conn, batch)
+
+
+def latencies(url: str, warmup_cutoff: float) -> dict[int, list[float]]:
+    by_store: dict[int, list[float]] = defaultdict(list)
+    with db.connect(url) as conn:
+        for store, seconds in conn.execute(
+            "SELECT store_id, extract(epoch FROM dispatched_at - enqueued_at)"
+            "  FROM actions"
+            " WHERE dispatched_at IS NOT NULL"
+            "   AND enqueued_at >= (SELECT min(enqueued_at) FROM actions)"
+            "       + make_interval(secs => %s)",
+            (warmup_cutoff,),
+        ):
+            by_store[int(store)].append(float(seconds))
+    return by_store
+
+
+def p(values: list[float], q: int) -> float:
+    return (
+        statistics.quantiles(values, n=100, method="inclusive")[q - 1] if len(values) > 1 else 0.0
+    )
+
+
+def run_scenario(
+    config: BenchConfig,
+    url: str,
+    provider_url: str,
+    webhook_port: int,
+    scenario: Scenario,
+    rate: float,
+    logs: Path,
+) -> Scenario:
+    harness.prepare(url, stores=config.stores, max_inflight=config.max_inflight)
+    env = harness.courier_env(url, provider_url, claim_policy=scenario.policy, poll_after=30)
+    supervisor = harness.supervise(
+        harness.fleet(workers=config.workers, webhook_port=webhook_port, env=env, logs=logs),
+        logs / f"supervisor-{scenario.name}.log",
+    )
+    try:
+        time.sleep(1.0)
+        schedule = arrivals(config, rate, scenario.shape)
+        offer(url, schedule)
+        harness.wait_for(
+            lambda: (
+                harness.counts(url).get("pending", 0) + harness.counts(url).get("running", 0) == 0
+            ),
+            timeout=120,
+            every=0.5,
+        )
+    finally:
+        supervisor.stop()
+    by_store = latencies(url, config.warmup)
+    quiet = [s for store, values in by_store.items() if store != 1 for s in values]
+    scenario.samples = len(quiet)
+    scenario.quiet_p50 = p(quiet, 50)
+    scenario.quiet_p95 = p(quiet, 95)
+    scenario.noisy_p95 = p(by_store.get(1, []), 95)
+    return scenario
+
+
+def calibrate(
+    config: BenchConfig, url: str, provider_url: str, webhook_port: int, logs: Path
+) -> float:
+    """Actions per second the workers sustain on a backlog that keeps them all busy."""
+    harness.prepare(url, stores=config.stores, max_inflight=config.max_inflight)
+    backlog = config.workers * 60
+    with db.connect(url) as conn:
+        intake.enqueue_many(
+            conn,
+            (
+                (1 + i % config.stores, f"+1555{i:07d}", "Your order has shipped.")
+                for i in range(backlog)
+            ),
+        )
+    env = harness.courier_env(url, provider_url, poll_after=30)
+    supervisor = harness.supervise(
+        harness.fleet(workers=config.workers, webhook_port=webhook_port, env=env, logs=logs),
+        logs / "supervisor-calibrate.log",
+    )
+    try:
+        harness.wait_for(lambda: harness.counts(url).get("pending", 0) == 0, timeout=300, every=0.2)
+    finally:
+        supervisor.stop()
+    with db.connect(url) as conn:
+        times = sorted(
+            float(t)
+            for (t,) in conn.execute(
+                "SELECT extract(epoch FROM dispatched_at) FROM actions"
+                " WHERE dispatched_at IS NOT NULL"
+            )
+        )
+    lo, hi = times[len(times) // 10], times[(len(times) * 9) // 10]
+    return (len(times) * 0.8) / (hi - lo)
+
+
+def run(config: BenchConfig) -> BenchResult:
+    workdir = config.workdir or harness.scratch_dir("courier-bench-")
+    workdir.mkdir(parents=True, exist_ok=True)
+    # One receiver port for the whole run, so the provider's webhooks always have a home.
+    webhook_port = harness.free_port()
+    with harness.postgres(workdir) as pg:
+        provider = harness.start_provider(
+            workdir / "provider.jsonl",
+            webhook_url=f"http://127.0.0.1:{webhook_port}/webhooks",
+            seed=config.seed,
+            options={**QUIET_PROVIDER, "send_latency": config.send_latency, "fsync": False},
+        )
+        try:
+            capacity = calibrate(config, pg.url, provider.url, webhook_port, workdir)
+            rate = config.utilization * capacity / config.stores
+            result = BenchResult(
+                config={
+                    k: (str(v) if isinstance(v, Path) else v) for k, v in asdict(config).items()
+                },
+                capacity_per_second=capacity,
+                rate_per_store=rate,
+            )
+            plan = [
+                Scenario("baseline: every store equal", "fair", "even", gated=False),
+                Scenario("one store 10x, steady", "fair", "steady", gated=True),
+                Scenario("one store 10x, bulk sends", "fair", "bulk", gated=True),
+                Scenario("one store 10x, bulk sends", "fifo", "bulk", gated=False),
+            ]
+            for scenario in plan:
+                log.warning("bench: %s (%s)", scenario.name, scenario.policy)
+                run_scenario(config, pg.url, provider.url, webhook_port, scenario, rate, workdir)
+        finally:
+            provider.stop()
+    baseline = plan[0].quiet_p95
+    for scenario in plan:
+        scenario.ratio = scenario.quiet_p95 / baseline if baseline else 0.0
+        if scenario.gated:
+            scenario.passed = scenario.ratio <= 1 + config.tolerance
+    result.scenarios = plan
+    result.passed = all(s.passed for s in plan if s.gated)
+    return result
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(prog="python -m courier.bench")
+    parser.add_argument("--duration", type=float, default=BenchConfig.duration)
+    parser.add_argument("--workers", type=int, default=BenchConfig.workers)
+    parser.add_argument("--utilization", type=float, default=BenchConfig.utilization)
+    parser.add_argument("--workdir", type=Path)
+    parser.add_argument("--json", type=Path)
+    args = parser.parse_args(argv)
+    logging.basicConfig(level=logging.WARNING, format="%(asctime)s %(message)s")
+    result = run(
+        BenchConfig(
+            duration=args.duration,
+            workers=args.workers,
+            utilization=args.utilization,
+            workdir=args.workdir,
+        )
+    )
+    print(result.markdown())
+    print(f"\n{'PASS' if result.passed else 'FAIL'}")
+    if args.json:
+        args.json.write_text(json.dumps(asdict(result), indent=2, default=str))
+    return 0 if result.passed else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
