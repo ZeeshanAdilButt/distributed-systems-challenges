@@ -6,9 +6,17 @@ compare their p95 with a baseline where every store sends the same amount.
 
 The load is sized against measured capacity, so the run means the same thing on a
 laptop and on a big box: first we time a backlog to find what the workers can do, then
-we offer `utilization` of that. Ten times one store's share comes in two shapes, a
+size the traffic so the busiest scenario, with the noisy store at 10x, uses
+`utilization` of it. That is how you would provision, for the traffic you expect at
+peak. The baseline sends the same per-store traffic without the noisy store's extra, so
+it runs a little lighter. Ten times one store's share comes in two shapes, a
 steady stream and the bulk sends a real noisy store makes, and FIFO runs the bulk shape
 once more so the table shows what fair claiming is protecting against.
+
+Every connection runs with synchronous_commit off. This measures how claims are shared,
+not how fast the disk flushes, and on a laptop or a VM an occasional slow fsync stalls
+every commit at once and swamps the difference being measured. The chaos run, where
+durability is the point, keeps it on.
 
     python -m courier.bench
 """
@@ -26,6 +34,8 @@ from collections.abc import Sequence
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Literal
+
+from psycopg.conninfo import make_conninfo
 
 from courier import db, harness, intake
 from courier.config import ClaimPolicy
@@ -47,7 +57,7 @@ class BenchConfig:
     stores: int = 100
     workers: int = 8
     max_inflight: int = 2
-    utilization: float = 0.6
+    utilization: float = 0.5
     noisy_factor: float = 10.0
     duration: float = 40.0
     warmup: float = 5.0
@@ -96,9 +106,10 @@ class BenchResult:
         lines.append("")
         lines.append(
             f"Measured capacity {self.capacity_per_second:.0f} actions/s with"
-            f" {self.config['workers']} workers; offered {self.config['utilization']:.0%} of it"
-            f" ({self.rate_per_store:.2f}/s per store, the noisy store at"
-            f" {self.config['noisy_factor']:.0f}x). Gate: quiet p95 within"
+            f" {self.config['workers']} workers. Each store sends {self.rate_per_store:.2f}/s"
+            f" and the noisy one {self.config['noisy_factor']:.0f}x that, which uses"
+            f" {self.config['utilization']:.0%} of capacity (the baseline, without the noisy"
+            f" store's extra, a little less). Gate: quiet p95 within"
             f" {self.config['tolerance']:.0%} of the baseline."
         )
         return "\n".join(lines)
@@ -208,9 +219,13 @@ def run_scenario(
 def calibrate(
     config: BenchConfig, url: str, provider_url: str, webhook_port: int, logs: Path
 ) -> float:
-    """Actions per second the workers sustain on a backlog that keeps them all busy."""
+    """Actions per second the workers sustain on a backlog that keeps them all busy.
+
+    Timed on this process's monotonic clock, not the database's: a VM that syncs its
+    clock can step it forward by seconds, and one step during the drain would halve the
+    answer."""
     harness.prepare(url, stores=config.stores, max_inflight=config.max_inflight)
-    backlog = config.workers * 60
+    backlog = config.workers * 150
     with db.connect(url) as conn:
         intake.enqueue_many(
             conn,
@@ -219,25 +234,26 @@ def calibrate(
                 for i in range(backlog)
             ),
         )
+    progress: list[tuple[float, int]] = []
+
+    def drained() -> bool:
+        statuses = harness.counts(url)
+        left = statuses.get("pending", 0) + statuses.get("running", 0)
+        progress.append((time.monotonic(), backlog - left))
+        return left == 0
+
     env = harness.courier_env(url, provider_url, poll_after=30)
     supervisor = harness.supervise(
         harness.fleet(workers=config.workers, webhook_port=webhook_port, env=env, logs=logs),
         logs / "supervisor-calibrate.log",
     )
     try:
-        harness.wait_for(lambda: harness.counts(url).get("pending", 0) == 0, timeout=300, every=0.2)
+        harness.wait_for(drained, timeout=300, every=0.1)
     finally:
         supervisor.stop()
-    with db.connect(url) as conn:
-        times = sorted(
-            float(t)
-            for (t,) in conn.execute(
-                "SELECT extract(epoch FROM dispatched_at) FROM actions"
-                " WHERE dispatched_at IS NOT NULL"
-            )
-        )
-    lo, hi = times[len(times) // 10], times[(len(times) * 9) // 10]
-    return (len(times) * 0.8) / (hi - lo)
+    lo = next(t for t, done in progress if done >= backlog // 10)
+    hi = next(t for t, done in progress if done >= backlog * 9 // 10)
+    return (backlog * 9 // 10 - backlog // 10) / (hi - lo)
 
 
 def run(config: BenchConfig) -> BenchResult:
@@ -246,6 +262,7 @@ def run(config: BenchConfig) -> BenchResult:
     # One receiver port for the whole run, so the provider's webhooks always have a home.
     webhook_port = harness.free_port()
     with harness.postgres(workdir) as pg:
+        url = make_conninfo(pg.url, options="-c synchronous_commit=off")
         provider = harness.start_provider(
             workdir / "provider.jsonl",
             webhook_url=f"http://127.0.0.1:{webhook_port}/webhooks",
@@ -253,8 +270,10 @@ def run(config: BenchConfig) -> BenchResult:
             options={**QUIET_PROVIDER, "send_latency": config.send_latency, "fsync": False},
         )
         try:
-            capacity = calibrate(config, pg.url, provider.url, webhook_port, workdir)
-            rate = config.utilization * capacity / config.stores
+            capacity = calibrate(config, url, provider.url, webhook_port, workdir)
+            # Per-store rate at which the busiest scenario uses `utilization` of capacity.
+            shares = config.stores - 1 + config.noisy_factor
+            rate = config.utilization * capacity / shares
             result = BenchResult(
                 config={
                     k: (str(v) if isinstance(v, Path) else v) for k, v in asdict(config).items()
@@ -270,7 +289,7 @@ def run(config: BenchConfig) -> BenchResult:
             ]
             for scenario in plan:
                 log.warning("bench: %s (%s)", scenario.name, scenario.policy)
-                run_scenario(config, pg.url, provider.url, webhook_port, scenario, rate, workdir)
+                run_scenario(config, url, provider.url, webhook_port, scenario, rate, workdir)
         finally:
             provider.stop()
     baseline = plan[0].quiet_p95

@@ -1,6 +1,6 @@
 """Run every gate and print one report.
 
-    ./verify            everything (about 15 minutes)
+    ./verify            everything (about ten minutes)
     ./verify --quick    skip mutation testing, shorter chaos and benchmark
 
 Needs Postgres server binaries (initdb, pg_ctl) on PATH or in PG_BIN, because the chaos
@@ -184,7 +184,9 @@ def scenario(
         out_json = REPORTS / f"{module.split('.')[-1]}.json"
         code, out = run([PYTHON, "-m", module, *args, "--json", str(out_json)], env=env)
         table = out.split("\nPASS")[0].split("\nFAIL")[0].strip()
-        return code == 0, last_line(out), table
+        lines = out.splitlines()
+        verdict = next((x for x in reversed(lines) if x.startswith(("PASS", "FAIL"))), "")
+        return code == 0, verdict or last_line(out), table
 
     return body
 
