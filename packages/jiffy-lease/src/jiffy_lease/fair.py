@@ -23,7 +23,15 @@ from collections.abc import Mapping, Sequence
 from psycopg import sql
 from psycopg.rows import dict_row
 
-from jiffy_lease.lease import TRUE, Connection, Lease, Leases, _columns, assignments, new_owner
+from jiffy_lease.lease import (
+    TRUE,
+    Connection,
+    Lease,
+    Leases,
+    assignments,
+    new_owner,
+    returning_columns,
+)
 
 
 class RoundRobin:
@@ -47,7 +55,7 @@ class RoundRobin:
         in flight while its lease is live, whatever its other columns say."""
         leases = self.leases
         owner = new_owner()
-        extra, extra_params = assignments(assign or {}, "_jl_set_")
+        extra, extra_params = assignments(assign or {})
         query = sql.SQL(
             """
             WITH part AS (
@@ -89,9 +97,9 @@ class RoundRobin:
             where=where,
             available=leases.available("i"),
             take=leases.take(),
-            comma=sql.SQL(", ") if assign else sql.SQL(""),
+            comma=sql.SQL(""", """) if assign else sql.SQL(""),
             extra=extra,
-            returning=_columns(returning, "t"),
+            returning=returning_columns(returning, "t"),
         )
         bound = {**(params or {}), **extra_params, "_jl_owner": owner, "_jl_ttl": leases.ttl}
         started = time.monotonic()

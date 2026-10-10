@@ -22,8 +22,10 @@ from psycopg.rows import dict_row
 
 Connection = psycopg.Connection[Any]
 
-TRUE = sql.SQL("TRUE")
-BY_ID = sql.SQL("id")
+TRUE = sql.SQL("""TRUE""")
+BY_ID = sql.SQL("""id""")
+SET_PREFIX = "_jl_set_"
+"""Parameter names for assigned values, kept apart from the caller's own parameters."""
 
 
 class LeaseLost(Exception):
@@ -61,28 +63,28 @@ class Lease:
         return time.monotonic() >= self.deadline - margin
 
 
-def assignments(
-    values: Mapping[str, object], prefix: str
-) -> tuple[sql.Composable, dict[str, object]]:
+def column(name: str, alias: str | None = None) -> sql.Identifier:
+    return sql.Identifier(alias, name) if alias else sql.Identifier(name)
+
+
+def assignments(values: Mapping[str, object]) -> tuple[sql.Composable, dict[str, object]]:
     """`col = value, ...` where a `sql.Composable` value is inlined as an expression and
     anything else becomes a bound parameter."""
     parts: list[sql.Composable] = []
     params: dict[str, object] = {}
-    for column, value in values.items():
+    for name, value in values.items():
         if isinstance(value, sql.Composable):
             rhs: sql.Composable = value
         else:
-            name = f"{prefix}{column}"
-            params[name] = value
-            rhs = sql.Placeholder(name)
-        parts.append(sql.SQL("{} = {}").format(sql.Identifier(column), rhs))
-    return sql.SQL(", ").join(parts), params
+            params[SET_PREFIX + name] = value
+            rhs = sql.Placeholder(SET_PREFIX + name)
+        parts.append(sql.SQL("""{} = {}""").format(sql.Identifier(name), rhs))
+    return sql.SQL(""", """).join(parts), params
 
 
-def _columns(names: Sequence[str], alias: str | None = None) -> sql.Composable:
-    if alias is None:
-        return sql.SQL("").join(sql.SQL(", {}").format(sql.Identifier(n)) for n in names)
-    return sql.SQL("").join(sql.SQL(", {}").format(sql.Identifier(alias, n)) for n in names)
+def returning_columns(names: Sequence[str], alias: str | None = None) -> sql.Composable:
+    """`, a, b` to append after the columns a statement always returns."""
+    return sql.Composed([sql.SQL(""", {}""").format(column(n, alias)) for n in names])
 
 
 class Leases:
@@ -102,24 +104,23 @@ class Leases:
 
     def available(self, alias: str | None = None) -> sql.Composable:
         """True for rows nobody holds: never leased, released, or lease expired."""
-        col = sql.Identifier(alias, "lease_until") if alias else sql.Identifier("lease_until")
-        return sql.SQL("({col} IS NULL OR {col} < now())").format(col=col)
+        return sql.SQL("""({col} IS NULL OR {col} < now())""").format(
+            col=column("lease_until", alias)
+        )
 
     def take(self) -> sql.Composable:
         """The SET clause of a claim. Uses `_jl_owner` and `_jl_ttl` parameters."""
         return sql.SQL(
-            "owner = %(_jl_owner)s, epoch = epoch + 1,"
-            " lease_until = now() + make_interval(secs => %(_jl_ttl)s)"
+            """owner = %(_jl_owner)s, epoch = epoch + 1,
+               lease_until = now() + make_interval(secs => %(_jl_ttl)s)"""
         )
 
     def guard(
         self, lease: Lease, alias: str | None = None
     ) -> tuple[sql.Composable, dict[str, object]]:
         """A WHERE fragment that holds only while `lease` is the current claim."""
-        owner = sql.Identifier(alias, "owner") if alias else sql.Identifier("owner")
-        epoch = sql.Identifier(alias, "epoch") if alias else sql.Identifier("epoch")
-        fragment = sql.SQL("{owner} = %(_jl_owner)s AND {epoch} = %(_jl_epoch)s").format(
-            owner=owner, epoch=epoch
+        fragment = sql.SQL("""{owner} = %(_jl_owner)s AND {epoch} = %(_jl_epoch)s""").format(
+            owner=column("owner", alias), epoch=column("epoch", alias)
         )
         return fragment, {"_jl_owner": lease.owner, "_jl_epoch": lease.epoch}
 
@@ -138,7 +139,7 @@ class Leases:
         Picking and taking happen in one statement, and SKIP LOCKED lets concurrent
         claimers pass each other instead of queueing on the same row."""
         owner = new_owner()
-        extra, extra_params = assignments(assign or {}, "_jl_set_")
+        extra, extra_params = assignments(assign or {})
         query = sql.SQL(
             """
             UPDATE {table}
@@ -153,12 +154,12 @@ class Leases:
         ).format(
             table=self.ident,
             take=self.take(),
-            comma=sql.SQL(", ") if assign else sql.SQL(""),
+            comma=sql.SQL(""", """) if assign else sql.SQL(""),
             extra=extra,
             where=where,
             available=self.available(),
             order_by=order_by,
-            returning=_columns(returning),
+            returning=returning_columns(returning),
         )
         bound = {**(params or {}), **extra_params, "_jl_owner": owner, "_jl_ttl": self.ttl}
         started = time.monotonic()
@@ -183,8 +184,8 @@ class Leases:
         """Push `lease_until` forward. Raises LeaseLost if the claim has been superseded."""
         guard, guard_params = self.guard(lease)
         query = sql.SQL(
-            "UPDATE {table} SET lease_until = now() + make_interval(secs => %(_jl_ttl)s)"
-            " WHERE id = %(_jl_id)s AND {guard}"
+            """UPDATE {table} SET lease_until = now() + make_interval(secs => %(_jl_ttl)s)
+                WHERE id = %(_jl_id)s AND {guard}"""
         ).format(table=self.ident, guard=guard)
         started = time.monotonic()
         cur = conn.execute(query, {**guard_params, "_jl_id": lease.id, "_jl_ttl": lease.ttl})
@@ -214,13 +215,15 @@ class Leases:
             values["lease_until"] = None
         if not values:
             raise ValueError("nothing to update")
-        sets, set_params = assignments(values, "_jl_set_")
+        sets, set_params = assignments(values)
         guard, guard_params = self.guard(lease)
-        condition = guard if where is None else sql.SQL("{} AND ({})").format(guard, where)
+        if where is not None:
+            guard = sql.SQL("""{} AND ({})""").format(guard, where)
         query = sql.SQL(
-            "UPDATE {table} SET {sets}"
-            " WHERE id = %(_jl_id)s AND {condition} RETURNING id{returning}"
-        ).format(table=self.ident, sets=sets, condition=condition, returning=_columns(returning))
+            """UPDATE {table} SET {sets}
+                WHERE id = %(_jl_id)s AND {guard}
+            RETURNING id{returning}"""
+        ).format(table=self.ident, sets=sets, guard=guard, returning=returning_columns(returning))
         bound = {**(params or {}), **set_params, **guard_params, "_jl_id": lease.id}
         with conn.cursor(row_factory=dict_row) as cur:
             cur.execute(query, bound)
@@ -235,7 +238,7 @@ class Leases:
 
     def owns(self, conn: Connection, lease: Lease) -> bool:
         guard, guard_params = self.guard(lease)
-        query = sql.SQL("SELECT 1 FROM {table} WHERE id = %(_jl_id)s AND {guard}").format(
+        query = sql.SQL("""SELECT 1 FROM {table} WHERE id = %(_jl_id)s AND {guard}""").format(
             table=self.ident, guard=guard
         )
         return conn.execute(query, {**guard_params, "_jl_id": lease.id}).fetchone() is not None
