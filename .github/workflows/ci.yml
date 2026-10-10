@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install -e . pytest==9.1.1 mypy==2.4.0 ruff==0.17.0
+      - run: ruff check . && ruff format --check .
+      - run: mypy src tests
+      - run: pytest -q
