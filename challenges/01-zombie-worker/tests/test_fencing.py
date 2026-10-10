@@ -28,7 +28,9 @@ def wait_for_lease_to_expire(conn: db.Conn, job_id: int, timeout: float = 10.0) 
     """Poll the database clock, the same clock the claim query judges leases by."""
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
-        row = conn.execute("SELECT lease_until < now() FROM jobs WHERE id = %s", (job_id,)).fetchone()
+        row = conn.execute(
+            "SELECT lease_until < now() FROM jobs WHERE id = %s", (job_id,)
+        ).fetchone()
         if row is not None and row[0]:
             return
         time.sleep(0.05)
@@ -110,5 +112,7 @@ def test_a_zombie_that_lost_its_lease_cannot_win(
     expected = "HELLO (epoch 2)"
     job = conn.execute("SELECT status, epoch, result FROM jobs WHERE id = %s", (job_id,)).fetchone()
     assert job == ("done", 2, expected)
-    effect = conn.execute("SELECT epoch, value FROM receiver_state WHERE job_id = %s", (job_id,)).fetchone()
+    effect = conn.execute(
+        "SELECT epoch, value FROM receiver_state WHERE job_id = %s", (job_id,)
+    ).fetchone()
     assert effect == (2, expected)

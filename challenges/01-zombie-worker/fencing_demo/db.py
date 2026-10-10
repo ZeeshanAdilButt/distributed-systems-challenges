@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import os
-from typing import TypeAlias
 
 import psycopg
 from psycopg.rows import TupleRow
 
-Conn: TypeAlias = psycopg.Connection[TupleRow]
+type Conn = psycopg.Connection[TupleRow]
 
 DEFAULT_URL = "postgresql://postgres:postgres@localhost:5432/postgres"
 
