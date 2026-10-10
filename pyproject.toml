@@ -15,7 +15,8 @@ classifiers = [
 dependencies = ["psycopg>=3.2"]
 
 [project.urls]
-Source = "https://github.com/ZeeshanAdilButt/distributed-systems-challenges/tree/main/packages/jiffy-lease"
+Source = "https://github.com/ZeeshanAdilButt/jiffy-lease"
+Monorepo = "https://github.com/ZeeshanAdilButt/distributed-systems-challenges"
 
 [build-system]
 requires = ["hatchling"]
@@ -28,3 +29,27 @@ packages = ["src/jiffy_lease"]
 source_paths = ["src/jiffy_lease/"]
 pytest_add_cli_args = ["--import-mode=importlib", "-p", "no:cacheprovider"]
 pytest_add_cli_args_test_selection = ["tests/"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["mutants"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "PT", "N", "C4", "PIE", "RET"]
+# Exceptions are named for what happened (LeaseLost), not suffixed with Error.
+ignore = ["N818"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["jiffy_lease", "jiffy_flaky", "jiffy_chaos", "fencing_demo", "courier"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+mypy_path = "src"
+explicit_package_bases = true
+exclude = ["mutants/"]
+
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib"
+markers = ["slow: runs real processes for several seconds"]
