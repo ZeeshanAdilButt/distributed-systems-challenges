@@ -5,6 +5,7 @@ requires-python = ">=3.12"
 dependencies = [
     "fencing-demo",
     "jiffy-lease",
+    "jiffy-flaky",
 ]
 
 [dependency-groups]
@@ -26,6 +27,7 @@ members = ["packages/*", "challenges/*"]
 [tool.uv.sources]
 fencing-demo = { workspace = true }
 jiffy-lease = { workspace = true }
+jiffy-flaky = { workspace = true }
 
 [tool.ruff]
 line-length = 100
