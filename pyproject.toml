@@ -23,3 +23,8 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/jiffy_lease"]
+
+[tool.mutmut]
+source_paths = ["src/jiffy_lease/"]
+pytest_add_cli_args = ["--import-mode=importlib", "-p", "no:cacheprovider"]
+pytest_add_cli_args_test_selection = ["tests/"]
