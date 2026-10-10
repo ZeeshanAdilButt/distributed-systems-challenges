@@ -4,11 +4,12 @@
 #   docker run --rm --shm-size=256m dsc-verify            # add --quick for the short run
 #
 # Postgres refuses to run as root, and the chaos run starts and crashes its own
-# cluster, so everything runs as an ordinary user.
+# cluster, so everything runs as an ordinary user. tini runs as PID 1 and reaps the
+# processes the chaos run kills, which a plain PID 1 would leave as zombies.
 FROM python:3.12-slim-bookworm
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends postgresql-15 procps \
+ && apt-get install -y --no-install-recommends postgresql-15 procps tini \
  && rm -rf /var/lib/apt/lists/*
 COPY --from=ghcr.io/astral-sh/uv:0.13.0 /uv /usr/local/bin/uv
 
@@ -23,4 +24,4 @@ WORKDIR /home/runner/repo
 COPY --chown=runner . .
 RUN uv sync --all-packages --frozen
 
-ENTRYPOINT ["./verify"]
+ENTRYPOINT ["/usr/bin/tini", "--", "./verify"]

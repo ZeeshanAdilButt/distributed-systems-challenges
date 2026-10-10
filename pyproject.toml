@@ -54,6 +54,8 @@ exclude = ["mutants/"]
 
 [tool.pytest.ini_options]
 addopts = "--import-mode=importlib"
+# mutmut leaves a copy of the tests in mutants/; collecting it would count them twice.
+norecursedirs = [".*", "*.egg", "build", "dist", "venv", "mutants"]
 markers = [
     "slow: runs real processes for several seconds",
 ]

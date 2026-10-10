@@ -163,7 +163,7 @@ Your numbers will differ; the gates should not.
 |---|---|
 | ruff, lint and format | clean, 90 files |
 | `mypy --strict` | clean, 83 files across 6 projects |
-| tests | 248 passed: 160 in the packages, 62 in the challenges, 26 property tests |
+| tests | 176 passed: 130 in the packages, 33 in the challenges, 13 property tests |
 | mutation score, jiffy-lease | 363 of 372 mutants killed, 97.6% |
 | mutation score, courier | 187 of 189 mutants killed, 98.9% |
 | fairness benchmark | pass |

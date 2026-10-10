@@ -128,18 +128,26 @@ def pytest(env: dict[str, str]) -> tuple[bool, str, str]:
         env=env,
     )
     suites: dict[str, list[int]] = {}
+    failures: list[str] = []
     for case in ET.parse(junit).getroot().iter("testcase"):
         path = case.get("classname", "")
         area = (
             "property tests" if "propert" in path or "test_states" in path else path.split(".")[0]
         )
         tally = suites.setdefault(area, [0, 0])
-        failed = case.find("failure") is not None or case.find("error") is not None
-        tally[1 if failed else 0] += 1
+        problem = case.find("failure")
+        if problem is None:
+            problem = case.find("error")
+        tally[0 if problem is None else 1] += 1
+        if problem is not None:
+            reason = (problem.get("message") or "").splitlines()[:1]
+            failures.append(f"- {path}::{case.get('name')}: {' '.join(reason)[:300]}")
     details = "\n".join(
         f"- {area}: {ok} passed" + (f", {bad} failed" if bad else "")
         for area, (ok, bad) in sorted(suites.items())
     )
+    if failures:
+        details += "\n\nFailed:\n\n" + "\n".join(failures)
     return code == 0, last_line(out), details
 
 
