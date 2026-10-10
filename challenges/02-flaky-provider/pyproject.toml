@@ -1,0 +1,24 @@
+[project]
+name = "courier"
+version = "0.1.0"
+description = "Send one message per action through a provider that times out, duplicates and reorders."
+requires-python = ">=3.12"
+dependencies = [
+    "jiffy-lease",
+    "jiffy-flaky",
+    "jiffy-chaos",
+    "httpx>=0.28",
+    "psycopg[binary]>=3.2",
+]
+
+[tool.uv.sources]
+jiffy-lease = { workspace = true }
+jiffy-flaky = { workspace = true }
+jiffy-chaos = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["courier"]

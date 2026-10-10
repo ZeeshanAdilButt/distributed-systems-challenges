@@ -7,6 +7,7 @@ dependencies = [
     "jiffy-lease",
     "jiffy-flaky",
     "jiffy-chaos",
+    "courier",
 ]
 
 [dependency-groups]
@@ -30,6 +31,7 @@ fencing-demo = { workspace = true }
 jiffy-lease = { workspace = true }
 jiffy-flaky = { workspace = true }
 jiffy-chaos = { workspace = true }
+courier = { workspace = true }
 
 [tool.ruff]
 line-length = 100
