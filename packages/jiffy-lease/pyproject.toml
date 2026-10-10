@@ -1,0 +1,25 @@
+[project]
+name = "jiffy-lease"
+version = "0.1.0"
+description = "Postgres row leases with fencing epochs, fenced heartbeats and fair claiming across tenants."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+authors = [{ name = "Zeeshan Adil", email = "zeeabutt@outlook.com" }]
+keywords = ["postgres", "lease", "fencing", "job-queue", "skip-locked"]
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "Typing :: Typed",
+    "Topic :: Database",
+]
+dependencies = ["psycopg>=3.2"]
+
+[project.urls]
+Source = "https://github.com/ZeeshanAdilButt/distributed-systems-challenges/tree/main/packages/jiffy-lease"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/jiffy_lease"]

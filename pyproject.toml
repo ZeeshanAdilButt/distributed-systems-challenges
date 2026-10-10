@@ -4,6 +4,7 @@ version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
     "fencing-demo",
+    "jiffy-lease",
 ]
 
 [dependency-groups]
@@ -24,6 +25,7 @@ members = ["packages/*", "challenges/*"]
 
 [tool.uv.sources]
 fencing-demo = { workspace = true }
+jiffy-lease = { workspace = true }
 
 [tool.ruff]
 line-length = 100
