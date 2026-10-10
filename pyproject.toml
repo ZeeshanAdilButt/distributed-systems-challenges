@@ -1,0 +1,46 @@
+[project]
+name = "distributed-systems-challenges"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.1",
+    "hypothesis==6.168.5",
+    "mypy==2.4.0",
+    "ruff==0.17.0",
+    "mutmut==3.8.0",
+    "types-psutil==7.2.2.20260906",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["packages/*", "challenges/*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["mutants"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "PT", "N", "C4", "PIE", "RET"]
+# Exceptions are named for what happened (LeaseLost), not suffixed with Error.
+ignore = ["N818"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["jiffy_lease", "jiffy_flaky", "jiffy_chaos", "fencing_demo", "courier"]
+
+[tool.mypy]
+strict = true
+python_version = "3.12"
+explicit_package_bases = true
+exclude = ["mutants/"]
+
+[tool.pytest.ini_options]
+addopts = "--import-mode=importlib"
+markers = [
+    "slow: runs real processes for several seconds",
+]
