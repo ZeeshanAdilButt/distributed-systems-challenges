@@ -1,0 +1,112 @@
+# Single-replica Postgres for throwaway test clusters such as k3s or kind. Not for
+# production: the password is in plain sight and there is no backup or replication.
+#
+# The data is on a PersistentVolumeClaim, not emptyDir. A crash test deletes the pod,
+# and an emptyDir would go with it, so the new pod would start from an empty database
+# instead of running crash recovery. Wipe it with
+#   kubectl -n jiffy delete pvc data-postgres-0
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jiffy
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres
+  namespace: jiffy
+type: Opaque
+stringData:
+  password: postgres
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-headless
+  namespace: jiffy
+spec:
+  clusterIP: None
+  selector:
+    app: postgres
+  ports:
+    - name: postgres
+      port: 5432
+---
+# Reachable from the host at <node-ip>:30432. On k3s the node IP is usually 127.0.0.1.
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: jiffy
+spec:
+  type: NodePort
+  selector:
+    app: postgres
+  ports:
+    - name: postgres
+      port: 5432
+      targetPort: 5432
+      nodePort: 30432
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: jiffy
+spec:
+  serviceName: postgres-headless
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          args:
+            - -c
+            - fsync=on
+            - -c
+            - synchronous_commit=on
+            - -c
+            - full_page_writes=on
+            - -c
+            - shared_buffers=64MB
+            - -c
+            - max_connections=200
+            - -c
+            - max_wal_size=256MB
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres
+                  key: password
+            # A subdirectory, because some provisioners put lost+found in the mount root
+            # and initdb refuses a non-empty directory.
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          ports:
+            - name: postgres
+              containerPort: 5432
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres", "-h", "127.0.0.1"]
+            periodSeconds: 1
+            failureThreshold: 2
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 1Gi

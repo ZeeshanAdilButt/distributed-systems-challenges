@@ -1,0 +1,38 @@
+# Postgres for chaos tests. Not for production.
+#
+# The data lives on a named volume, not tmpfs: a killed container comes back with the
+# same files, so the server has something to run crash recovery on. Wipe it with
+#   docker compose -f infra/postgres/compose.yaml down -v
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "${PG_PORT:-55432}:5432"
+    command:
+      - postgres
+      - -c
+      - fsync=on
+      - -c
+      - synchronous_commit=on
+      - -c
+      - full_page_writes=on
+      - -c
+      - shared_buffers=64MB
+      - -c
+      - max_connections=200
+      - -c
+      - max_wal_size=256MB
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      # -h forces TCP, so the check fails while the entrypoint's socket-only setup
+      # server is running and only passes once the real server is up.
+      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "127.0.0.1"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  pgdata:
