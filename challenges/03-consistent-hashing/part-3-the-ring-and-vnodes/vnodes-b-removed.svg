@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 440" width="680" height="440" font-family="system-ui, -apple-system, Segoe UI, sans-serif">
+<title>DB B removed: its arcs go to A and C</title>
+<text x="24" y="32" font-size="17" font-weight="600" fill="#888780">DB B removed: its arcs go to A and C</text>
+<circle cx="250" cy="235" r="150" fill="none" stroke="#88878044" stroke-width="3"/>
+<rect x="557.6" y="14" width="98.39999999999999" height="28" rx="14" fill="#eb683433"/><text x="606.8" y="33" text-anchor="middle" font-size="14" font-weight="600" fill="#c2410c">DB B removed</text>
+<path d="M110.5 179.8 A150 150 0 0 1 338.2 113.6" fill="none" stroke="#2a78d6" stroke-width="5" opacity="0.55"/>
+<path d="M345.6 119.4 A150 150 0 0 1 392.7 281.4" fill="none" stroke="#eda100" stroke-width="5" opacity="0.55"/>
+<path d="M389.5 290.2 A150 150 0 0 1 338.2 356.4" fill="none" stroke="#eda100" stroke-width="5" opacity="0.55"/>
+<path d="M330.4 361.6 A150 150 0 0 1 250.0 385.0" fill="none" stroke="#2a78d6" stroke-width="5" opacity="0.55"/>
+<path d="M240.6 384.7 A150 150 0 0 1 107.3 281.4" fill="none" stroke="#eda100" stroke-width="5" opacity="0.55"/>
+<path d="M104.7 272.3 A150 150 0 0 1 107.3 188.6" fill="none" stroke="#2a78d6" stroke-width="5" opacity="0.55"/>
+<circle cx="392.7" cy="188.6" r="12" fill="#1baf7a" stroke="#ffffff" stroke-width="3" opacity="0.28"/>
+<text x="421.2" y="184.4" text-anchor="middle" font-size="15" font-weight="600" fill="#9a9890" opacity="0.28">B20</text>
+<circle cx="161.8" cy="356.4" r="12" fill="#1baf7a" stroke="#ffffff" stroke-width="3" opacity="0.28"/>
+<text x="144.2" y="385.6" text-anchor="middle" font-size="15" font-weight="600" fill="#9a9890" opacity="0.28">B60</text>
+<circle cx="161.8" cy="113.6" r="12" fill="#1baf7a" stroke="#ffffff" stroke-width="3" opacity="0.28"/>
+<text x="144.2" y="94.4" text-anchor="middle" font-size="15" font-weight="600" fill="#9a9890" opacity="0.28">B90</text>
+<circle cx="338.2" cy="113.6" r="12" fill="#2a78d6" stroke="#ffffff" stroke-width="3"/>
+<text x="355.8" y="94.4" text-anchor="middle" font-size="15" font-weight="600" fill="#888780">A10</text>
+<circle cx="392.7" cy="281.4" r="12" fill="#eda100" stroke="#ffffff" stroke-width="3"/>
+<text x="421.2" y="295.6" text-anchor="middle" font-size="15" font-weight="600" fill="#888780">C30</text>
+<circle cx="338.2" cy="356.4" r="12" fill="#eda100" stroke="#ffffff" stroke-width="3"/>
+<text x="355.8" y="385.6" text-anchor="middle" font-size="15" font-weight="600" fill="#888780">C40</text>
+<circle cx="250.0" cy="385.0" r="12" fill="#2a78d6" stroke="#ffffff" stroke-width="3"/>
+<text x="250.0" y="420.0" text-anchor="middle" font-size="15" font-weight="600" fill="#888780">A50</text>
+<circle cx="107.3" cy="281.4" r="12" fill="#eda100" stroke="#ffffff" stroke-width="3"/>
+<text x="78.8" y="295.6" text-anchor="middle" font-size="15" font-weight="600" fill="#888780">C70</text>
+<circle cx="107.3" cy="188.6" r="12" fill="#2a78d6" stroke="#ffffff" stroke-width="3"/>
+<text x="78.8" y="184.4" text-anchor="middle" font-size="15" font-weight="600" fill="#888780">A80</text>
+<rect x="369.5" y="230.5" width="9" height="9" transform="rotate(45 374.0 235.0)" fill="#eda100"/>
+<rect x="125.4" y="199.7" width="9" height="9" transform="rotate(45 129.9 204.2)" fill="#2a78d6"/>
+<rect x="253.3" y="354.3" width="9" height="9" transform="rotate(45 257.8 358.8)" fill="#2a78d6"/>
+<rect x="192.7" y="342.7" width="9" height="9" transform="rotate(45 197.2 347.2)" fill="#eda100"/>
+<rect x="341.0" y="151.5" width="9" height="9" transform="rotate(45 345.5 156.0)" fill="#eda100"/>
+<rect x="166.5" y="135.0" width="9" height="9" transform="rotate(45 171.0 139.5)" fill="#2a78d6"/>
+<text x="250" y="233" text-anchor="middle" font-size="18" font-weight="600" fill="#888780">2 physical databases</text>
+<text x="250" y="257" text-anchor="middle" font-size="14" fill="#9a9890">Clockwise ownership</text>
+<circle cx="460" cy="105" r="8" fill="#2a78d6"/>
+<text x="476" y="110" font-size="14" fill="#888780">DB A · 50% of the ring</text>
+<circle cx="460" cy="137" r="8" fill="#1baf7a" opacity="0.28"/>
+<text x="476" y="142" font-size="14" fill="#9a9890">DB B · removed</text>
+<circle cx="460" cy="169" r="8" fill="#eda100"/>
+<text x="476" y="174" font-size="14" fill="#888780">DB C · 50% of the ring</text>
+<text x="452" y="220" font-size="13" fill="#9a9890">◆ posts, at their positions</text>
+</svg>

@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 400" width="680" height="400" font-family="system-ui, -apple-system, Segoe UI, sans-serif">
+<title>DB D joins: buckets 1, 5 and 9 move</title>
+<text x="24" y="32" font-size="17" font-weight="600" fill="#888780">DB D joins: buckets 1, 5 and 9 move</text>
+<rect x="24" y="60" width="86" height="86" rx="12" fill="#2a78d6"/>
+<text x="36" y="88" font-size="20" font-weight="700" fill="#ffffff">0</text>
+<text x="100" y="134" text-anchor="end" font-size="13" fill="#ffffff">DB A</text>
+<rect x="122" y="60" width="86" height="86" rx="12" fill="#e87ba4" stroke="#161827" stroke-width="3" stroke-dasharray="6 4"/>
+<text x="134" y="88" font-size="20" font-weight="700" fill="#ffffff">1</text>
+<text x="198" y="134" text-anchor="end" font-size="13" fill="#ffffff">DB D</text>
+<text x="134" y="110" font-size="11" fill="#ffffff">15008</text>
+<rect x="220" y="60" width="86" height="86" rx="12" fill="#2a78d6"/>
+<text x="232" y="88" font-size="20" font-weight="700" fill="#ffffff">2</text>
+<text x="296" y="134" text-anchor="end" font-size="13" fill="#ffffff">DB A</text>
+<text x="232" y="110" font-size="11" fill="#ffffff">15010</text>
+<rect x="318" y="60" width="86" height="86" rx="12" fill="#2a78d6"/>
+<text x="330" y="88" font-size="20" font-weight="700" fill="#ffffff">3</text>
+<text x="394" y="134" text-anchor="end" font-size="13" fill="#ffffff">DB A</text>
+<text x="330" y="110" font-size="11" fill="#ffffff">15002</text>
+<rect x="24" y="158" width="86" height="86" rx="12" fill="#1baf7a"/>
+<text x="36" y="186" font-size="20" font-weight="700" fill="#ffffff">4</text>
+<text x="100" y="232" text-anchor="end" font-size="13" fill="#ffffff">DB B</text>
+<rect x="122" y="158" width="86" height="86" rx="12" fill="#e87ba4" stroke="#161827" stroke-width="3" stroke-dasharray="6 4"/>
+<text x="134" y="186" font-size="20" font-weight="700" fill="#ffffff">5</text>
+<text x="198" y="232" text-anchor="end" font-size="13" fill="#ffffff">DB D</text>
+<text x="134" y="208" font-size="11" fill="#ffffff">15003</text>
+<rect x="220" y="158" width="86" height="86" rx="12" fill="#1baf7a"/>
+<text x="232" y="186" font-size="20" font-weight="700" fill="#ffffff">6</text>
+<text x="296" y="232" text-anchor="end" font-size="13" fill="#ffffff">DB B</text>
+<rect x="318" y="158" width="86" height="86" rx="12" fill="#1baf7a"/>
+<text x="330" y="186" font-size="20" font-weight="700" fill="#ffffff">7</text>
+<text x="394" y="232" text-anchor="end" font-size="13" fill="#ffffff">DB B</text>
+<text x="330" y="208" font-size="11" fill="#ffffff">15009</text>
+<rect x="24" y="256" width="86" height="86" rx="12" fill="#eda100"/>
+<text x="36" y="284" font-size="20" font-weight="700" fill="#ffffff">8</text>
+<text x="100" y="330" text-anchor="end" font-size="13" fill="#ffffff">DB C</text>
+<rect x="122" y="256" width="86" height="86" rx="12" fill="#e87ba4" stroke="#161827" stroke-width="3" stroke-dasharray="6 4"/>
+<text x="134" y="284" font-size="20" font-weight="700" fill="#ffffff">9</text>
+<text x="198" y="330" text-anchor="end" font-size="13" fill="#ffffff">DB D</text>
+<text x="134" y="306" font-size="11" fill="#ffffff">15001</text>
+<rect x="220" y="256" width="86" height="86" rx="12" fill="#eda100"/>
+<text x="232" y="284" font-size="20" font-weight="700" fill="#ffffff">10</text>
+<text x="296" y="330" text-anchor="end" font-size="13" fill="#ffffff">DB C</text>
+<rect x="318" y="256" width="86" height="86" rx="12" fill="#eda100"/>
+<text x="330" y="284" font-size="20" font-weight="700" fill="#ffffff">11</text>
+<text x="394" y="330" text-anchor="end" font-size="13" fill="#ffffff">DB C</text>
+<text x="440" y="84" font-size="15" font-weight="600" fill="#888780">Partition map</text>
+<rect x="440" y="104" width="14" height="14" rx="3" fill="#2a78d6"/>
+<text x="462" y="116" font-size="14" fill="#888780">DB A: 0, 2, 3</text>
+<rect x="440" y="134" width="14" height="14" rx="3" fill="#1baf7a"/>
+<text x="462" y="146" font-size="14" fill="#888780">DB B: 4, 6, 7</text>
+<rect x="440" y="164" width="14" height="14" rx="3" fill="#eda100"/>
+<text x="462" y="176" font-size="14" fill="#888780">DB C: 8, 10, 11</text>
+<rect x="440" y="194" width="14" height="14" rx="3" fill="#e87ba4"/>
+<text x="462" y="206" font-size="14" fill="#888780">DB D: 1, 5, 9</text>
+<text x="440" y="250" font-size="13" fill="#9a9890">bucket = crc32(post_id) % 12</text>
+<text x="440" y="272" font-size="13" fill="#9a9890">dashed: buckets that just moved</text>
+</svg>

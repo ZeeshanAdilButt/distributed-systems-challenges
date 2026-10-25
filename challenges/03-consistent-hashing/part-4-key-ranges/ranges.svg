@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 230" width="680" height="230" font-family="system-ui, -apple-system, Segoe UI, sans-serif">
+<title>Four databases, four runs of post ids</title>
+<text x="24" y="32" font-size="17" font-weight="600" fill="#888780">Four databases, four runs of post ids</text>
+<rect x="24.0" y="90" width="198.1" height="64" rx="10" fill="#2a78d6"/>
+<text x="124.5" y="129" text-anchor="middle" font-size="15" font-weight="700" fill="#ffffff">DB A</text>
+<text x="24.0" y="174" font-size="12" fill="#9a9890">0</text>
+<rect x="225.1" y="90" width="140.6" height="64" rx="10" fill="#1baf7a"/>
+<text x="296.9" y="129" text-anchor="middle" font-size="15" font-weight="700" fill="#ffffff">DB B</text>
+<text x="225.1" y="174" font-size="12" fill="#9a9890">35,000</text>
+<rect x="368.7" y="90" width="140.6" height="64" rx="10" fill="#eda100"/>
+<text x="440.5" y="129" text-anchor="middle" font-size="15" font-weight="700" fill="#ffffff">DB C</text>
+<text x="368.7" y="174" font-size="12" fill="#9a9890">60,000</text>
+<rect x="512.4" y="90" width="140.6" height="64" rx="10" fill="#e87ba4"/>
+<text x="584.2" y="129" text-anchor="middle" font-size="15" font-weight="700" fill="#ffffff">DB D</text>
+<text x="512.4" y="174" font-size="12" fill="#9a9890">85,000</text>
+<text x="656" y="76" text-anchor="end" font-size="13" fill="#dc2626">every new post lands on DB D →</text>
+<text x="24" y="216" font-size="13" fill="#9a9890">post ids in order, no hashing</text>
+</svg>

@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 440" width="680" height="440" font-family="system-ui, -apple-system, Segoe UI, sans-serif">
+<title>DB D joins at 60</title>
+<text x="24" y="32" font-size="17" font-weight="600" fill="#888780">DB D joins at 60</text>
+<circle cx="250" cy="235" r="150" fill="none" stroke="#88878044" stroke-width="3"/>
+<rect x="574.0" y="14" width="82.0" height="28" rx="14" fill="#eb683433"/><text x="615.0" y="33" text-anchor="middle" font-size="14" font-weight="600" fill="#c2410c">DB D added</text>
+<path d="M169.6 108.4 A150 150 0 0 1 338.2 356.4" fill="none" stroke="#2a78d6" stroke-width="5" opacity="0.55"/>
+<path d="M330.4 361.6 A150 150 0 0 1 161.8 356.4" fill="none" stroke="#e87ba4" stroke-width="5" opacity="0.55"/>
+<path d="M154.4 350.6 A150 150 0 0 1 107.3 281.4" fill="none" stroke="#1baf7a" stroke-width="5" opacity="0.55"/>
+<path d="M104.7 272.3 A150 150 0 0 1 161.8 113.6" fill="none" stroke="#eda100" stroke-width="5" opacity="0.55"/>
+<circle cx="338.2" cy="356.4" r="12" fill="#2a78d6" stroke="#ffffff" stroke-width="3"/>
+<text x="355.8" y="385.6" text-anchor="middle" font-size="15" font-weight="600" fill="#888780">A40</text>
+<circle cx="161.8" cy="356.4" r="12" fill="#e87ba4" stroke="#ffffff" stroke-width="3"/>
+<text x="144.2" y="385.6" text-anchor="middle" font-size="15" font-weight="600" fill="#888780">D60</text>
+<circle cx="107.3" cy="281.4" r="12" fill="#1baf7a" stroke="#ffffff" stroke-width="3"/>
+<text x="78.8" y="295.6" text-anchor="middle" font-size="15" font-weight="600" fill="#888780">B70</text>
+<circle cx="161.8" cy="113.6" r="12" fill="#eda100" stroke="#ffffff" stroke-width="3"/>
+<text x="144.2" y="94.4" text-anchor="middle" font-size="15" font-weight="600" fill="#888780">C90</text>
+<rect x="369.5" y="230.5" width="9" height="9" transform="rotate(45 374.0 235.0)" fill="#2a78d6"/>
+<rect x="125.4" y="199.7" width="9" height="9" transform="rotate(45 129.9 204.2)" fill="#eda100"/>
+<rect x="253.3" y="354.3" width="9" height="9" transform="rotate(45 257.8 358.8)" fill="#e87ba4"/>
+<rect x="192.7" y="342.7" width="9" height="9" transform="rotate(45 197.2 347.2)" fill="#e87ba4"/>
+<rect x="360.8" y="276.1" width="9" height="9" transform="rotate(45 365.3 280.6)" fill="#2a78d6"/>
+<rect x="160.6" y="320.9" width="9" height="9" transform="rotate(45 165.1 325.4)" fill="#1baf7a"/>
+<text x="250" y="233" text-anchor="middle" font-size="18" font-weight="600" fill="#888780">4 physical databases</text>
+<text x="250" y="257" text-anchor="middle" font-size="14" fill="#9a9890">Clockwise ownership</text>
+<circle cx="460" cy="105" r="8" fill="#2a78d6"/>
+<text x="476" y="110" font-size="14" fill="#888780">DB A · 50% of the ring</text>
+<circle cx="460" cy="137" r="8" fill="#1baf7a"/>
+<text x="476" y="142" font-size="14" fill="#888780">DB B · 10% of the ring</text>
+<circle cx="460" cy="169" r="8" fill="#eda100"/>
+<text x="476" y="174" font-size="14" fill="#888780">DB C · 20% of the ring</text>
+<circle cx="460" cy="201" r="8" fill="#e87ba4"/>
+<text x="476" y="206" font-size="14" fill="#888780">DB D · 20% of the ring</text>
+<text x="452" y="252" font-size="13" fill="#9a9890">◆ posts, at their positions</text>
+</svg>

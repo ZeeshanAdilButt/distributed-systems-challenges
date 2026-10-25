@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 320" width="680" height="320" font-family="system-ui, -apple-system, Segoe UI, sans-serif">
+<title>Where the 10,000 newest posts land</title>
+<text x="64" y="24" font-size="15" font-weight="600" fill="#888780">Where the 10,000 newest posts land</text>
+<text x="14" y="160.0" font-size="12" fill="#888780" transform="rotate(-90 14 160.0)" text-anchor="middle">share of new posts</text>
+<line x1="64" x2="660" y1="264.0" y2="264.0" stroke="#88878055" stroke-width="1"/>
+<text x="56" y="268.0" font-size="11" fill="#888780" text-anchor="end">0%</text>
+<line x1="64" x2="660" y1="212.0" y2="212.0" stroke="#88878055" stroke-width="1"/>
+<text x="56" y="216.0" font-size="11" fill="#888780" text-anchor="end">25%</text>
+<line x1="64" x2="660" y1="160.0" y2="160.0" stroke="#88878055" stroke-width="1"/>
+<text x="56" y="164.0" font-size="11" fill="#888780" text-anchor="end">50%</text>
+<line x1="64" x2="660" y1="108.0" y2="108.0" stroke="#88878055" stroke-width="1"/>
+<text x="56" y="112.0" font-size="11" fill="#888780" text-anchor="end">75%</text>
+<line x1="64" x2="660" y1="56.0" y2="56.0" stroke="#88878055" stroke-width="1"/>
+<text x="56" y="60.0" font-size="11" fill="#888780" text-anchor="end">100%</text>
+<rect x="92.5" y="214.4" width="28.0" height="49.6" rx="3" fill="#2a78d6"><title>DB A: 24%</title></rect>
+<text x="106.5" y="209.4" font-size="11" fill="#888780" text-anchor="middle">24%</text>
+<rect x="124.5" y="208.4" width="28.0" height="55.6" rx="3" fill="#1baf7a"><title>DB A: 27%</title></rect>
+<text x="138.5" y="203.4" font-size="11" fill="#888780" text-anchor="middle">27%</text>
+<rect x="156.5" y="264.0" width="28.0" height="0.0" rx="3" fill="#eb6834"><title>DB A: 0%</title></rect>
+<text x="170.5" y="259.0" font-size="11" fill="#888780" text-anchor="middle">0%</text>
+<text x="138.5" y="282" font-size="12" fill="#888780" text-anchor="middle">DB A</text>
+<rect x="241.5" y="210.5" width="28.0" height="53.5" rx="3" fill="#2a78d6"><title>DB B: 26%</title></rect>
+<text x="255.5" y="205.5" font-size="11" fill="#888780" text-anchor="middle">26%</text>
+<rect x="273.5" y="229.3" width="28.0" height="34.7" rx="3" fill="#1baf7a"><title>DB B: 17%</title></rect>
+<text x="287.5" y="224.3" font-size="11" fill="#888780" text-anchor="middle">17%</text>
+<rect x="305.5" y="264.0" width="28.0" height="0.0" rx="3" fill="#eb6834"><title>DB B: 0%</title></rect>
+<text x="319.5" y="259.0" font-size="11" fill="#888780" text-anchor="middle">0%</text>
+<text x="287.5" y="282" font-size="12" fill="#888780" text-anchor="middle">DB B</text>
+<rect x="390.5" y="211.5" width="28.0" height="52.5" rx="3" fill="#2a78d6"><title>DB C: 25%</title></rect>
+<text x="404.5" y="206.5" font-size="11" fill="#888780" text-anchor="middle">25%</text>
+<rect x="422.5" y="209.7" width="28.0" height="54.3" rx="3" fill="#1baf7a"><title>DB C: 26%</title></rect>
+<text x="436.5" y="204.7" font-size="11" fill="#888780" text-anchor="middle">26%</text>
+<rect x="454.5" y="264.0" width="28.0" height="0.0" rx="3" fill="#eb6834"><title>DB C: 0%</title></rect>
+<text x="468.5" y="259.0" font-size="11" fill="#888780" text-anchor="middle">0%</text>
+<text x="436.5" y="282" font-size="12" fill="#888780" text-anchor="middle">DB C</text>
+<rect x="539.5" y="211.5" width="28.0" height="52.5" rx="3" fill="#2a78d6"><title>DB D: 25%</title></rect>
+<text x="553.5" y="206.5" font-size="11" fill="#888780" text-anchor="middle">25%</text>
+<rect x="571.5" y="200.6" width="28.0" height="63.4" rx="3" fill="#1baf7a"><title>DB D: 30%</title></rect>
+<text x="585.5" y="195.6" font-size="11" fill="#888780" text-anchor="middle">30%</text>
+<rect x="603.5" y="56.0" width="28.0" height="208.0" rx="3" fill="#eb6834"><title>DB D: 100%</title></rect>
+<text x="617.5" y="51.0" font-size="11" fill="#888780" text-anchor="middle">100%</text>
+<text x="585.5" y="282" font-size="12" fill="#888780" text-anchor="middle">DB D</text>
+<line x1="562.0" x2="576.0" y1="20" y2="20" stroke="#eb6834" stroke-width="3"/>
+<text x="580.0" y="24" font-size="12" fill="#888780">key ranges</text>
+<line x1="398.0" x2="412.0" y1="20" y2="20" stroke="#1baf7a" stroke-width="3"/>
+<text x="416.0" y="24" font-size="12" fill="#888780">ring, 64 vnodes each</text>
+<line x1="260.4" x2="274.4" y1="20" y2="20" stroke="#2a78d6" stroke-width="3"/>
+<text x="278.4" y="24" font-size="12" fill="#888780">12 fixed buckets</text>
+</svg>
