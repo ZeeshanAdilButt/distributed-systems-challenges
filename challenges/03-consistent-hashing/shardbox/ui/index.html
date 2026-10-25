@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Shardbox · Challenge 03</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>Shardbox</h1>
+      <p>Challenge 03 · which database owns this comment, and what moves when databases come and go</p>
+    </div>
+    <div id="pill" class="pill"><span class="dot"></span><span id="pill-text">connecting</span></div>
+  </header>
+
+  <nav class="strategies" aria-label="Placement strategy">
+    <button data-preset="modulo">hash % n</button>
+    <button data-preset="buckets">Fixed buckets</button>
+    <button data-preset="ring-lesson">Hash ring</button>
+    <button data-preset="ring-vnodes-lesson">Ring + vnodes</button>
+    <button data-preset="ranges">Key ranges</button>
+    <label class="real"><input type="checkbox" id="real"> real 2<sup>32</sup> ring with hashed tokens</label>
+  </nav>
+
+  <main class="grid">
+    <section class="card wide">
+      <div class="card-head">
+        <h2 id="viz-title">The placement</h2>
+        <span id="badge" class="badge" hidden></span>
+      </div>
+      <p id="rule" class="muted small rule"></p>
+      <svg id="viz" viewBox="0 0 640 400" role="img" aria-label="How keys are placed on databases"></svg>
+      <p id="last-action" class="note"></p>
+    </section>
+
+    <section class="col">
+      <div class="card">
+        <div class="card-head">
+          <h2>Databases</h2>
+          <span class="muted small">each one is a real SQLite file</span>
+        </div>
+        <div id="nodes" class="nodes"></div>
+        <form id="add" class="row">
+          <button class="primary" type="submit">Add a database</button>
+          <label id="at-label" class="small">at position <input id="at" type="number" min="0" max="99" value="60"></label>
+          <button id="burst" class="ghost" type="button">Write 200 comments</button>
+        </form>
+        <div id="restore" class="row"></div>
+        <p id="error" class="error" role="alert"></p>
+      </div>
+
+      <div class="card">
+        <h2>Send a request</h2>
+        <form id="req" class="row">
+          <label class="small">post id <input id="post" type="number" value="15003" min="0"></label>
+          <button class="primary" type="submit" data-verb="POST">Write a comment</button>
+          <button class="ghost" type="button" id="read">Read comments</button>
+        </form>
+        <div id="trace" class="trace muted">The route appears here.</div>
+      </div>
+
+      <div class="card">
+        <h2>What the last change did</h2>
+        <ol id="steps" class="steps"><li class="muted">Add, remove or crash a database to see a live migration.</li></ol>
+        <div id="moved" class="small"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>One viral post</h2>
+        <span class="muted small">3,000 comments on a single post</span>
+      </div>
+      <form id="hot" class="row">
+        <label class="small">split it <input id="stripes" type="number" min="1" max="256" value="1"> ways</label>
+        <button class="primary" type="submit">Send the comments</button>
+      </form>
+      <div id="hot-out" class="compare"></div>
+      <p class="muted small">One key is one hash is one database, however many databases there are. Splitting the key into stripes spreads the writes; a read then asks every database that holds a stripe. Try 1, then 32.</p>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>A stale router</h2>
+        <span class="muted small">vnode 60 moves from DB B to DB D</span>
+      </div>
+      <form id="stale" class="row">
+        <label class="small"><input type="checkbox" id="fenced" checked> DB B checks the epoch</label>
+        <button class="primary" type="submit">Move it, then write from the old map</button>
+      </form>
+      <div id="stale-out" class="compare"></div>
+      <p class="muted small">API 1 still believes vnode 60 is on DB B at epoch 7. With the check, DB B refuses once, API 1 refreshes and every write lands on DB D. Without it, DB B accepts them and the owner never sees them.</p>
+    </section>
+
+    <section class="card">
+      <h2>Sample posts</h2>
+      <table class="samples">
+        <thead><tr><th>Post</th><th id="where-head">Position</th><th>Owner</th><th>Comments</th></tr></thead>
+        <tbody id="samples"></tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2>If one more database joined now</h2>
+        <span class="muted small">share of keys each strategy would move</span>
+      </div>
+      <div id="compare" class="compare"></div>
+      <p class="muted small">The dashed line is the least possible: the new database's fair share. Computed on 20,000 post ids for the databases you have now.</p>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
