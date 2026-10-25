@@ -16,8 +16,12 @@ code's own idea of what happened.
 | 01 | [Fencing a zombie worker](challenges/01-zombie-worker) | A worker stalls, its lease runs out, someone else takes the job, and then the first worker wakes up and finishes anyway. A lease epoch stops it. |
 | 02 | [One message per action through a flaky provider](challenges/02-flaky-provider) | Send an SMS for every order, exactly once, through a provider that times out, sends duplicate and out-of-order webhooks and ignores your epochs. Then share the workers fairly across 100 stores, one of them ten times busier than the rest. |
 
+| 03 | [Where does each comment live? Sharding, buckets, rings and ranges](challenges/03-consistent-hashing) | One database cannot hold every comment, so you split them across several. Which one owns a post, and what moves when you add, remove or lose one? Four ways (modulo, fixed buckets, a hash ring with vnodes, key ranges) on real SQLite shards, with a page to play with all of them. Then a viral post that no amount of hashing can spread, and the stale API server that keeps writing to a database that no longer owns the data. Seven parts. |
+
 Each challenge has its own README with the design, what the tests prove, the measured
 results and the limits.
+
+![Three vnodes per database](challenges/03-consistent-hashing/part-3-the-ring-and-vnodes/vnodes.svg)
 
 ## Packages
 
@@ -28,6 +32,7 @@ and usable outside this repository.
 |---|---|
 | [jiffy-lease](packages/jiffy-lease) | Postgres row leases with a fencing epoch, a fenced heartbeat for slow workers, and round-robin claiming across tenants. |
 | [jiffy-flaky](packages/jiffy-flaky) | A fake messaging provider that misbehaves on purpose (timeouts, duplicate and reordered webhooks, late failures) and keeps its own log, so you can audit what really got sent. |
+| [jiffy-ring](packages/jiffy-ring) | Four ways to decide which database owns a key: `hash % n`, fixed buckets with a partition map, a hash ring with virtual nodes (and replica preference lists), and key ranges. One interface, and the arithmetic to see what moves when a database joins. |
 | [jiffy-chaos](packages/jiffy-chaos) | Supervise a fleet of real processes, SIGKILL or freeze them at random, and crash Postgres, locally, in docker compose or on Kubernetes. Also ships the pytest fixture that gives every test its own schema. |
 
 ## Running everything
@@ -61,8 +66,14 @@ docker run --rm --shm-size=256m dsc-verify
 
 CI does exactly that, with `--quick`, on every push.
 
-Linux and macOS only. The chaos tooling relies on POSIX signals; on Windows, use WSL or
-Docker.
+Challenges 01 and 02 are Linux and macOS only: the chaos tooling relies on POSIX signals,
+and on Windows you would use WSL or Docker. Challenge 03 needs no Postgres and no signals,
+so it runs everywhere:
+
+```bash
+uv sync --all-packages
+uv run shardbox            # the page, at http://127.0.0.1:8090
+```
 
 ## Layout
 

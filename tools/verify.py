@@ -199,6 +199,22 @@ def scenario(
     return body
 
 
+SHARDING = ROOT / "challenges" / "03-consistent-hashing"
+
+
+def shard_part(script: Path, quick: bool) -> Callable[[], tuple[bool, str, str]]:
+    """One part of challenge 03. Its report goes to reports/, never over its results.md."""
+
+    def body() -> tuple[bool, str, str]:
+        report = REPORTS / f"03-{script.stem}.md"
+        args = [PYTHON, str(script), "--out", str(report)] + (["--quick"] if quick else [])
+        code, out = run(args)
+        text = report.read_text(encoding="utf-8") if report.exists() else out[-3000:]
+        return code == 0, f"report in reports/{report.name}", text
+
+    return body
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="verify")
     parser.add_argument("--quick", action="store_true", help="skip mutation, shorter runs")
@@ -248,6 +264,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                     scenario("courier.chaos", chaos_args, chaos_env),
                 ),
             ]
+            for part in sorted(SHARDING.glob("part-*/*.py")):
+                if not part.name.startswith("test_"):
+                    plan.append((f"sharding {part.parent.name}", shard_part(part, args.quick)))
             for name, body in plan:
                 if any(name.startswith(s) for s in args.skip):
                     continue
