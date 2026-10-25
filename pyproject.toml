@@ -8,6 +8,8 @@ dependencies = [
     "jiffy-flaky",
     "jiffy-chaos",
     "courier",
+    "jiffy-ring",
+    "shardbox",
 ]
 
 [dependency-groups]
@@ -32,6 +34,8 @@ jiffy-lease = { workspace = true }
 jiffy-flaky = { workspace = true }
 jiffy-chaos = { workspace = true }
 courier = { workspace = true }
+jiffy-ring = { workspace = true }
+shardbox = { workspace = true }
 
 [tool.ruff]
 line-length = 100
@@ -43,8 +47,15 @@ select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "PT", "N", "C4", "PIE", "
 # Exceptions are named for what happened (LeaseLost), not suffixed with Error.
 ignore = ["N818"]
 
+[tool.ruff.lint.per-file-ignores]
+# Long single-line SVG elements read better unbroken.
+"challenges/03-consistent-hashing/shardbox/diagrams.py" = ["E501"]
+"challenges/03-consistent-hashing/shardbox/svg.py" = ["E501"]
+
 [tool.ruff.lint.isort]
-known-first-party = ["jiffy_lease", "jiffy_flaky", "jiffy_chaos", "fencing_demo", "courier"]
+known-first-party = [
+    "jiffy_lease", "jiffy_flaky", "jiffy_chaos", "jiffy_ring", "fencing_demo", "courier", "shardbox",
+]
 
 [tool.mypy]
 strict = true

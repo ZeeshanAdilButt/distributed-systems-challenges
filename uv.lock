@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = ">=3.12"
 resolution-markers = [
     "python_full_version >= '3.15'",
@@ -16,6 +16,8 @@ members = [
     "jiffy-chaos",
     "jiffy-flaky",
     "jiffy-lease",
+    "jiffy-ring",
+    "shardbox",
 ]
 
 [[package]]
@@ -252,6 +254,8 @@ dependencies = [
     { name = "jiffy-chaos" },
     { name = "jiffy-flaky" },
     { name = "jiffy-lease" },
+    { name = "jiffy-ring" },
+    { name = "shardbox" },
 ]
 
 [package.dev-dependencies]
@@ -271,6 +275,8 @@ requires-dist = [
     { name = "jiffy-chaos", editable = "packages/jiffy-chaos" },
     { name = "jiffy-flaky", editable = "packages/jiffy-flaky" },
     { name = "jiffy-lease", editable = "packages/jiffy-lease" },
+    { name = "jiffy-ring", editable = "packages/jiffy-ring" },
+    { name = "shardbox", editable = "challenges/03-consistent-hashing" },
 ]
 
 [package.metadata.requires-dev]
@@ -462,6 +468,11 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [{ name = "psycopg", specifier = ">=3.2" }]
+
+[[package]]
+name = "jiffy-ring"
+version = "0.1.0"
+source = { editable = "packages/jiffy-ring" }
 
 [[package]]
 name = "libcst"
@@ -1090,6 +1101,17 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/4c/e7/9baa826fc44c6f607a39ad35d419da7f51dec2df31ef169e7a4a34e1cc75/setproctitle-1.3.8-cp315-cp315t-win32.whl", hash = "sha256:ecf44731e351c6100885120cecf53a0f43a1bb975a92480de1f9e022ab542bc1", size = 12260, upload-time = "2026-10-01T21:09:13.6Z" },
     { url = "https://files.pythonhosted.org/packages/71/fb/08f55fab7294d18a6b1bc6d13340706c998b4641bd5f99ed9c7a626fcbf0/setproctitle-1.3.8-cp315-cp315t-win_amd64.whl", hash = "sha256:61aac898128dade36438da9387fea570f00cd519ad5231d3b268913afc2fc329", size = 13170, upload-time = "2026-10-01T21:09:15.351Z" },
 ]
+
+[[package]]
+name = "shardbox"
+version = "0.1.0"
+source = { editable = "challenges/03-consistent-hashing" }
+dependencies = [
+    { name = "jiffy-ring" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "jiffy-ring", editable = "packages/jiffy-ring" }]
 
 [[package]]
 name = "sortedcontainers"
