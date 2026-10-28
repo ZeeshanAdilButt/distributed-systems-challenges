@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stampede · Challenge 04</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>Stampede</h1>
+      <p>Challenge 04 · a popular post takes down the database when its cache expires</p>
+    </div>
+    <div id="pill" class="pill"><span class="dot"></span><span id="pill-text">ready</span></div>
+  </header>
+
+  <nav class="scenarios" id="scenarios" aria-label="Scenario"></nav>
+  <p class="story" id="story"></p>
+
+  <main class="grid">
+    <div class="col">
+      <section class="card">
+        <h2>Defences</h2>
+        <p class="muted small">Start from a plain 30 s TTL, then switch on the lesson's steps one at a time.</p>
+        <div class="switches">
+          <label class="switch"><input type="checkbox" data-d="stale"><span class="knob"></span>
+            <span><b>1 · Soft and hard TTL</b><em>serve a stale list for up to 2 minutes and refresh behind it</em></span></label>
+          <label class="switch"><input type="checkbox" data-d="coalesce"><span class="knob"></span>
+            <span><b>2 · One refresh per key</b><em>requests share the refresh in progress, in each process</em></span></label>
+          <label class="switch"><input type="checkbox" data-d="budget"><span class="knob"></span>
+            <span><b>3 · Refresh budget</b><em>5 starts a second and 2 at once per process, 300 ms query deadline</em></span></label>
+          <label class="switch"><input type="checkbox" data-d="local"><span class="knob"></span>
+            <span><b>Local cache in each API</b><em>2,000 entries, so an ElastiCache outage keeps some copies</em></span></label>
+          <label class="switch"><input type="checkbox" data-d="fleet_budget"><span class="knob"></span>
+            <span><b>Divide the budget by the fleet</b><em>100 refreshes a second in total, however many processes</em></span></label>
+          <label class="switch"><input type="checkbox" data-d="preserve_age" checked><span class="knob"></span>
+            <span><b>Keep timestamps on copy</b><em>untick to re-stamp copies as just read (the bug)</em></span></label>
+        </div>
+        <div class="presets">
+          <span class="muted small">Quick picks:</span>
+          <button class="ghost" data-layers="">none</button>
+          <button class="ghost" data-layers="stale">1</button>
+          <button class="ghost" data-layers="stale coalesce">1 + 2</button>
+          <button class="ghost" data-layers="stale coalesce budget local">all</button>
+        </div>
+        <div class="sliders">
+          <label>Reads per second <output id="rate-out"></output>
+            <input type="range" id="rate" min="1000" max="40000" step="1000" value="20000"></label>
+          <label>API processes <output id="instances-out"></output>
+            <input type="range" id="instances" min="2" max="60" step="1" value="20"></label>
+          <label>A read may wait <output id="deadline-out"></output>
+            <input type="range" id="deadline" min="0.25" max="2" step="0.25" value="0.5"></label>
+        </div>
+        <div class="row">
+          <button class="primary" id="run">Run the simulation</button>
+          <span id="status" class="muted small"></span>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>p123 in ElastiCache</h2>
+          <span id="entry-state" class="badge">no run yet</span>
+        </div>
+        <div class="agebar"><i id="age-fill"></i><span class="tick" style="left:25%">30 s</span><span class="tick" style="left:100%">120 s</span></div>
+        <pre id="entry" class="json">{}</pre>
+        <p class="muted small">Copies keep these timestamps. Reading a stale entry never gives it another two minutes.</p>
+      </section>
+
+      <section class="card">
+        <h2>The real code</h2>
+        <p class="muted small">Not simulated: threads, a real SQLite file and a 200 ms query, through the same <code>jiffy_cache</code> pieces.</p>
+        <div class="row">
+          <button data-burst="false">100 callers, no coalescing</button>
+          <button data-burst="true">100 callers, coalescing</button>
+        </div>
+        <p id="burst-out" class="note"></p>
+        <div class="row">
+          <button id="get">GET /posts/p123/comments?limit=20</button>
+          <button id="post">POST a comment</button>
+        </div>
+        <pre id="real-out" class="json small"></pre>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="card">
+        <div class="card-head">
+          <h2>The fleet at t = <span id="now">0</span> s</h2>
+          <div class="row playback">
+            <button id="play" class="ghost" aria-label="Play">▶</button>
+            <input type="range" id="cursor" min="0" max="0" value="0" aria-label="Time">
+          </div>
+        </div>
+        <svg id="arch" viewBox="0 0 760 330" role="img" aria-label="Clients, the API fleet, ElastiCache and PostgreSQL"></svg>
+      </section>
+
+      <section class="card">
+        <h2 id="verdict-title">What happened</h2>
+        <div class="tiles" id="tiles"></div>
+        <p id="verdict" class="note"></p>
+      </section>
+
+      <section class="charts">
+        <div class="card"><h3>What readers got, per second</h3><svg class="chart" id="c-reads"></svg>
+          <p class="legend"><i style="background:var(--fresh)"></i>fresh <i style="background:var(--stale)"></i>stale <i style="background:var(--waited)"></i>waited for a refresh <i style="background:var(--down)"></i>503</p></div>
+        <div class="card"><h3>PostgreSQL, queries per second</h3><svg class="chart" id="c-db"></svg>
+          <p class="legend"><i style="background:var(--sent)"></i>sent <i style="background:var(--waited)"></i>finished in time <i class="dash"></i>safe 500/s</p></div>
+        <div class="card"><h3>Oldest data served, seconds</h3><svg class="chart" id="c-age"></svg>
+          <p class="legend"><i style="background:var(--sent)"></i>true age <i class="dash"></i>30 s soft, 120 s hard</p></div>
+        <div class="card"><h3>Database CPU and comment writes</h3><svg class="chart" id="c-cpu"></svg>
+          <p class="legend"><i style="background:var(--waited)"></i>CPU busy % <i style="background:var(--sent)"></i>write p99, ms</p></div>
+      </section>
+    </div>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
