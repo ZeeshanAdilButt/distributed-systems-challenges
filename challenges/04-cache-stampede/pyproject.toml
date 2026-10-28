@@ -1,0 +1,20 @@
+[project]
+name = "stampede"
+version = "0.1.0"
+description = "A popular post takes down the database when its cache expires: the Comments API fleet, simulated and real, with every defence you can switch on and off."
+requires-python = ">=3.12"
+dependencies = ["jiffy-cache"]
+
+[project.scripts]
+stampede = "stampede.__main__:main"
+
+[tool.uv.sources]
+jiffy-cache = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["stampede"]
+artifacts = ["stampede/ui/*"]

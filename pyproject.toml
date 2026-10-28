@@ -10,6 +10,8 @@ dependencies = [
     "courier",
     "jiffy-ring",
     "shardbox",
+    "jiffy-cache",
+    "stampede",
 ]
 
 [dependency-groups]
@@ -36,6 +38,8 @@ jiffy-chaos = { workspace = true }
 courier = { workspace = true }
 jiffy-ring = { workspace = true }
 shardbox = { workspace = true }
+jiffy-cache = { workspace = true }
+stampede = { workspace = true }
 
 [tool.ruff]
 line-length = 100
@@ -54,7 +58,7 @@ ignore = ["N818"]
 
 [tool.ruff.lint.isort]
 known-first-party = [
-    "jiffy_lease", "jiffy_flaky", "jiffy_chaos", "jiffy_ring", "fencing_demo", "courier", "shardbox",
+    "jiffy_lease", "jiffy_flaky", "jiffy_chaos", "jiffy_ring", "jiffy_cache", "fencing_demo", "courier", "shardbox", "stampede",
 ]
 
 [tool.mypy]

@@ -13,11 +13,13 @@ members = [
     "courier",
     "distributed-systems-challenges",
     "fencing-demo",
+    "jiffy-cache",
     "jiffy-chaos",
     "jiffy-flaky",
     "jiffy-lease",
     "jiffy-ring",
     "shardbox",
+    "stampede",
 ]
 
 [[package]]
@@ -251,11 +253,13 @@ source = { virtual = "." }
 dependencies = [
     { name = "courier" },
     { name = "fencing-demo" },
+    { name = "jiffy-cache" },
     { name = "jiffy-chaos" },
     { name = "jiffy-flaky" },
     { name = "jiffy-lease" },
     { name = "jiffy-ring" },
     { name = "shardbox" },
+    { name = "stampede" },
 ]
 
 [package.dev-dependencies]
@@ -272,11 +276,13 @@ dev = [
 requires-dist = [
     { name = "courier", editable = "challenges/02-flaky-provider" },
     { name = "fencing-demo", editable = "challenges/01-zombie-worker" },
+    { name = "jiffy-cache", editable = "packages/jiffy-cache" },
     { name = "jiffy-chaos", editable = "packages/jiffy-chaos" },
     { name = "jiffy-flaky", editable = "packages/jiffy-flaky" },
     { name = "jiffy-lease", editable = "packages/jiffy-lease" },
     { name = "jiffy-ring", editable = "packages/jiffy-ring" },
     { name = "shardbox", editable = "challenges/03-consistent-hashing" },
+    { name = "stampede", editable = "challenges/04-cache-stampede" },
 ]
 
 [package.metadata.requires-dev]
@@ -430,6 +436,11 @@ sdist = { url = "https://files.pythonhosted.org/packages/01/e1/2069291243c926a2f
 wheels = [
     { url = "https://files.pythonhosted.org/packages/56/43/4ca9e49d27a1fcf6bece6f6aec0ea46bb9112489b93d4b688fb415457bdb/iniconfig-2.3.1-py3-none-any.whl", hash = "sha256:9121e2c1fdb355232495be3194c8dfe87ccc2d5dee45947b78e68f499790d7a7", size = 7552, upload-time = "2026-10-06T22:48:36.959Z" },
 ]
+
+[[package]]
+name = "jiffy-cache"
+version = "0.1.0"
+source = { editable = "packages/jiffy-cache" }
 
 [[package]]
 name = "jiffy-chaos"
@@ -1121,6 +1132,17 @@ sdist = { url = "https://files.pythonhosted.org/packages/e8/c4/ba2f8066cceb6f233
 wheels = [
     { url = "https://files.pythonhosted.org/packages/32/46/9cb0e58b2deb7f82b84065f37f3bffeb12413f947f9388e4cac22c4621ce/sortedcontainers-2.4.0-py2.py3-none-any.whl", hash = "sha256:a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0", size = 29575, upload-time = "2021-05-16T22:03:41.177Z" },
 ]
+
+[[package]]
+name = "stampede"
+version = "0.1.0"
+source = { editable = "challenges/04-cache-stampede" }
+dependencies = [
+    { name = "jiffy-cache" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "jiffy-cache", editable = "packages/jiffy-cache" }]
 
 [[package]]
 name = "textual"
