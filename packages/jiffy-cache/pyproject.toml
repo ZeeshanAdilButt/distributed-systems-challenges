@@ -1,0 +1,25 @@
+[project]
+name = "jiffy-cache"
+version = "0.1.0"
+description = "Cache pieces that keep a database alive when a popular entry expires: soft and hard TTLs, a bounded local cache, per-key request coalescing and a refresh budget."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.12"
+authors = [{ name = "Zeeshan Adil", email = "zeeabutt@outlook.com" }]
+keywords = ["cache", "cache-stampede", "stale-while-revalidate", "singleflight", "rate-limit"]
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "Typing :: Typed",
+    "Topic :: Database",
+]
+dependencies = []
+
+[project.urls]
+Monorepo = "https://github.com/ZeeshanAdilButt/distributed-systems-challenges"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/jiffy_cache"]
