@@ -199,14 +199,19 @@ def scenario(
     return body
 
 
-SHARDING = ROOT / "challenges" / "03-consistent-hashing"
+# Challenges whose parts are scripts: (gate name, folder). Each part runs as its own gate.
+PART_CHALLENGES = (
+    ("sharding", ROOT / "challenges" / "03-consistent-hashing"),
+    ("stampede", ROOT / "challenges" / "04-cache-stampede"),
+)
 
 
-def shard_part(script: Path, quick: bool) -> Callable[[], tuple[bool, str, str]]:
-    """One part of challenge 03. Its report goes to reports/, never over its results.md."""
+def challenge_part(script: Path, quick: bool) -> Callable[[], tuple[bool, str, str]]:
+    """One part of a challenge. Its report goes to reports/, never over its results.md."""
 
     def body() -> tuple[bool, str, str]:
-        report = REPORTS / f"03-{script.stem}.md"
+        number = script.parent.parent.name.split("-")[0]
+        report = REPORTS / f"{number}-{script.stem}.md"
         args = [PYTHON, str(script), "--out", str(report)] + (["--quick"] if quick else [])
         code, out = run(args)
         text = report.read_text(encoding="utf-8") if report.exists() else out[-3000:]
@@ -264,9 +269,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                     scenario("courier.chaos", chaos_args, chaos_env),
                 ),
             ]
-            for part in sorted(SHARDING.glob("part-*/*.py")):
-                if not part.name.startswith("test_"):
-                    plan.append((f"sharding {part.parent.name}", shard_part(part, args.quick)))
+            for label, folder in PART_CHALLENGES:
+                for part in sorted(folder.glob("part-*/*.py")):
+                    if not part.name.startswith("test_"):
+                        plan.append(
+                            (f"{label} {part.parent.name}", challenge_part(part, args.quick))
+                        )
             for name, body in plan:
                 if any(name.startswith(s) for s in args.skip):
                     continue

@@ -23,7 +23,9 @@ from jiffy_cache import Entry, Freshness, LocalCache, Policy, RefreshBudget, Sin
 policy = Policy(soft_ttl=30, hard_ttl=120)
 local: LocalCache[list[dict]] = LocalCache(max_entries=2_000)
 flight: SingleFlight[Entry[list[dict]]] = SingleFlight()
-budget = RefreshBudget.for_fleet(fleet_rate=100, fleet_concurrent=40, instances=20)  # 5/s, 2 at once
+budget = RefreshBudget.for_fleet(
+    fleet_rate=100, fleet_concurrent=40, instances=20
+)  # 5/s, 2 at once
 
 
 def refresh(key: str) -> Entry[list[dict]]:
