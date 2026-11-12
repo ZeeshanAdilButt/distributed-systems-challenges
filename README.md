@@ -10,6 +10,8 @@ third-party API that times out and lies about ordering, and 20,000 simulated rea
 second at one cache entry. The tests check the outcome from the outside, not from the
 code's own idea of what happened.
 
+Every challenge has a write-up on [Internals with Zee](https://www.internalswithzee.com/challenges/distributed-systems): read the problem, predict the result, then run it here. Short explanations of the ideas behind them are under [Concepts](https://www.internalswithzee.com/concepts).
+
 ## Challenges
 
 | | Challenge | The problem |

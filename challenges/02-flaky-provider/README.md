@@ -1,5 +1,7 @@
 # One message per action through a flaky provider
 
+> The write-up, with a prediction to make before you run it: [One message per action through a flaky provider](https://www.internalswithzee.com/challenges/distributed-systems/one-message-per-action). The ideas in one minute: [idempotency key](https://www.internalswithzee.com/concepts/idempotency-key), [transactional outbox](https://www.internalswithzee.com/concepts/transactional-outbox), [at-least-once delivery](https://www.internalswithzee.com/concepts/at-least-once-delivery).
+
 A store's order ships and the customer should get one text message about it. Not zero,
 not two. In between sit worker processes that get killed, a database that restarts, and
 an SMS provider that times out, delivers its status webhooks twice or out of order, and

@@ -1,5 +1,7 @@
 # Fencing a zombie worker
 
+> The write-up, with a prediction to make before you run it: [Fencing a zombie worker](https://www.internalswithzee.com/challenges/distributed-systems/fencing-a-zombie-worker). The idea in one minute: [what is a fencing token?](https://www.internalswithzee.com/concepts/fencing-token)
+
 A job claimed with a lease can outlive that lease. The worker stalls (a GC pause, a hung call), the lease expires, the job is handed to another worker, and then the first worker wakes up and carries on as if nothing happened. This challenge shows what stops that zombie, in Python and PostgreSQL, with a test that runs the zombie as a real second process.
 
 ## Run it

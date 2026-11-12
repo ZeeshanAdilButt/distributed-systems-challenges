@@ -1,5 +1,7 @@
 # 03 · Where does each comment live? Sharding, buckets, rings and ranges
 
+> The write-up, with a prediction to make before you run it: [Where does each comment live?](https://www.internalswithzee.com/challenges/distributed-systems/where-does-each-comment-live). The ideas in one minute: [consistent hashing](https://www.internalswithzee.com/concepts/consistent-hashing), [virtual nodes](https://www.internalswithzee.com/concepts/virtual-nodes), [hot key](https://www.internalswithzee.com/concepts/hot-key).
+
 One database can't hold every comment of a busy app, so you split the comments across
 several databases (**shards**). Then every request has to answer one question: **which
 database owns this post?** And whenever you add, remove or lose a database, you have to

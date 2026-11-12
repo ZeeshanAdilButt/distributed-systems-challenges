@@ -1,5 +1,7 @@
 # Challenge 04 · A popular post takes down the database when its cache expires
 
+> The write-up, with a prediction to make before you run it: [A popular post takes down the database](https://www.internalswithzee.com/challenges/distributed-systems/a-popular-post-takes-down-the-database). The ideas in one minute: [cache stampede](https://www.internalswithzee.com/concepts/cache-stampede), [metastable failure](https://www.internalswithzee.com/concepts/metastable-failure), [request coalescing](https://www.internalswithzee.com/concepts/request-coalescing), [stale-while-revalidate](https://www.internalswithzee.com/concepts/stale-while-revalidate).
+
 Your Comments API serves
 
 ```
